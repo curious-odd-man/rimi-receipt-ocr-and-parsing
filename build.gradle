@@ -26,15 +26,13 @@ configurations {
 compileJava.options.encoding = 'UTF-8'
 
 dependencies {
+    implementation 'net.sourceforge.tess4j:tess4j:5.8.0'
     implementation 'org.springframework.boot:spring-boot-starter'
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation(
-            'org.apache.pdfbox:pdfbox:2.0.26',
-//            'org.slf4j:slf4j-api:2.0.0',
-//            'org.slf4j:slf4j-simple:2.0.0',
             'org.apache.commons:commons-csv:1.9.0'
     )
 
