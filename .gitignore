@@ -1,0 +1,7 @@
+data
+build
+.gradle
+.idea
+
+
+export.csv
