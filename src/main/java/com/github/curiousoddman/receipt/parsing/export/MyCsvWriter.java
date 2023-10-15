@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.parsing;
+package com.github.curiousoddman.receipt.parsing.export;
 
 import lombok.experimental.UtilityClass;
 import org.apache.commons.csv.CSVFormat;
