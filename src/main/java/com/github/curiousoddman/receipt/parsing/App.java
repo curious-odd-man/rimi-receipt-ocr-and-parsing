@@ -1,5 +1,6 @@
 package com.github.curiousoddman.receipt.parsing;
 
+import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.parsing.Pdf2Text;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.Text2Receipt;
 import com.github.curiousoddman.receipt.parsing.validation.ReceiptValidator;
@@ -32,9 +33,18 @@ public class App implements ApplicationRunner {
             files
                     .filter(App::isPdfFile)
                     .map(pdf2Text::getOrConvert)
-                    .map(text -> text2ReceiptList.stream().map(parser -> parser.parse(text)).filter(Objects::nonNull).findFirst())
+                    .map(text -> text2ReceiptList.stream().map(parser -> tryParseOrNull(text, parser)).filter(Objects::nonNull).findFirst())
                     .map(Optional::get)
                     .forEach(receipt -> receiptValidatorList.forEach(receiptValidator -> receiptValidator.validate(receipt)));
+        }
+    }
+
+    private static Receipt tryParseOrNull(String text, Text2Receipt parser) {
+        try {
+            return parser.parse(text);
+        } catch (Exception e) {
+            log.error("Failed to parse receipt with parser {}", parser.getClass(), e);
+            return null;
         }
     }
 
