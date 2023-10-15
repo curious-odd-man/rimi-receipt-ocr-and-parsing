@@ -18,7 +18,12 @@ public class RimiContext implements Context {
     }
 
     public String getLineContaining(String text, int index) {
-        return getLinesContaining(text).get(index);
+        List<String> linesContaining = getLinesContaining(text);
+        if (linesContaining.size() > index) {
+            return linesContaining.get(index);
+        } else {
+            return null;
+        }
     }
 
     public List<String> getLinesContaining(String text) {
@@ -41,7 +46,7 @@ public class RimiContext implements Context {
         if (index >= 0) {
             return lines.get(index);
         } else {
-            return lines.get(lines.size() - index);
+            return lines.get(lines.size() + index);
         }
     }
 
@@ -56,8 +61,9 @@ public class RimiContext implements Context {
                     return result;
                 }
                 result.add(line);
+            } else {
+                addLines = line.contains(beginning);
             }
-            addLines = line.contains(beginning);
         }
         return result;
     }
