@@ -3,6 +3,7 @@ package com.github.curiousoddman.receipt.parsing;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import net.sourceforge.tess4j.Tesseract;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +34,17 @@ public class ReceiptParser {
     public static List<ReceiptRow> processFile(File file) {
         try {
             MDC.put("file", file.getName());
+
+            Tesseract tesseract = new Tesseract();
+            tesseract.setDatapath("D:\\Programming\\git\\private-tools\\receipts-parsing\\tes");
+            tesseract.setLanguage("lav");
+            tesseract.setPageSegMode(1);
+            tesseract.setOcrEngineMode(1);
+            String result = tesseract.doOCR(file);
+            log.info("result = ");
+            log.info("{}", result);
+
+
             List<ReceiptRow> rows = new ArrayList<>();
             log.info("Parsed file: ====================== ");
             for (ReceiptRow billRowRaw : rows) {

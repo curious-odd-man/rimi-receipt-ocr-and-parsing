@@ -21,7 +21,7 @@ public class App implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        try (Stream<Path> files = Files.list(Paths.get("D:\\Programming\\git\\private-tools\\receipts-parsing\\data\\input"))) {
+        try (Stream<Path> files = Files.list(Paths.get("D:\\Programming\\git\\private-tools\\gmail-client\\output"))) {
             List<ReceiptRow> rows = receiptParser.parseBills(files);
             log.info("All parsed rows");
             for (ReceiptRow row : rows) {
