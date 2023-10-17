@@ -2,6 +2,7 @@ package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.BasicText2Receipt;
+import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
 
@@ -41,41 +42,39 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         String text = "Nopelnītā Mans Rimi nauda";
         String line = context.getLineContaining(text, 0);
         if (line != null) {
-            return getBigDecimal(line, text);
+            return ConversionUtils.getBigDecimalAfterToken(line, text);
         } else {
             return null;
         }
     }
 
-    private static BigDecimal getBigDecimal(String line, String property) {
-        String[] splitByProperty = line.split(property);
-        for (String s : splitByProperty) {
-            if (!s.isBlank()) {
-                return getBigDecimal(s);
-            }
-        }
-        return null;
-    }
-
     @Override
     protected BigDecimal getTotalPayment(RimiContext context) {
-        String text = "Samaksai EUR";
-        String line = context.getLineContaining(text, 0);
-        return getBigDecimal(line, text);
+        Pattern paymentAmountPattern = Pattern.compile("Samaksai EUR +(.*)");
+        String paymentAmount = getFirstGroup(context, paymentAmountPattern);
+        Pattern totalAmountPattern = Pattern.compile("KOPA: +(\\d+[.,]\\d+) +EUR.*");
+        String totalAmount = getFirstGroup(context, totalAmountPattern);
+        Pattern bankCardPattern = Pattern.compile("Bankas karte +(\\d+[.,]\\d+).*");
+        String bankCardAmount = getFirstGroup(context, bankCardPattern);
+        return ConversionUtils.getBigDecimal(paymentAmount, totalAmount, bankCardAmount);
+    }
+
+    private static String getFirstGroup(RimiContext context, Pattern pattern) {
+        return ConversionUtils.getFirstGroup(context.getLineMatching(pattern, 0), pattern);
     }
 
     @Override
     protected BigDecimal getTotalVat(RimiContext context) {
         String text = "Nodoklis Ar PVN Bez PVN PVN summa";
         String line = context.getLinesAfterContaining(text).get(0);
-        return getBigDecimal(line.split(" ")[5]);
+        return ConversionUtils.getBigDecimal(line.split(" ")[5]);
     }
 
     @Override
     protected BigDecimal getShopBrandMoneyAccumulated(RimiContext context) {
         String text = "Mans Rimi naudas uzkrājums";
         String line = context.getLineContaining(text, 0);
-        return getBigDecimal(line, text);
+        return ConversionUtils.getBigDecimalAfterToken(line, text);
     }
 
     @Override
@@ -95,7 +94,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected Collection<? extends ReceiptItem> getItems(RimiContext context) {
-        Pattern pattern = Pattern.compile("(\\d+(,\\d+)?) (\\w+) X (\\d+([.,]\\d+)?) (\\w+|\\w+\\/\\w+) (\\d+([.,]\\d+)?) \\w");
+        Pattern pattern = Pattern.compile("(\\d+([.,]\\d+)?) (\\w+) X (\\d+([.,]\\d+)?) (\\w+|\\w+\\/\\w+) (\\d+([.,]\\d+)?) \\w");
         List<ReceiptItem> items = new ArrayList<>();
         List<String> linesBetween = context.getLinesBetween("KLIENTS:", "Maksājumu karte");
         List<String> itemNameBuilder = new ArrayList<>();
@@ -106,12 +105,12 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 if (matcher.matches()) {
                     ReceiptItem item = ReceiptItem
                             .builder()
-                            .description(Strings.join(itemNameBuilder, ' '))
-                            .count(getBigDecimal(matcher.group(1)))
+                            .description(Strings.join(itemNameBuilder, ' ').trim())
+                            .count(ConversionUtils.getBigDecimal(matcher.group(1)))
                             .units(matcher.group(3))
-                            .pricePerUnit(getBigDecimal(matcher.group(4)))
+                            .pricePerUnit(ConversionUtils.getBigDecimal(matcher.group(4)))
                             .discount(null)
-                            .finalCost(getBigDecimal(matcher.group(7)))
+                            .finalCost(ConversionUtils.getBigDecimal(matcher.group(7)))
                             .build();
 
                     items.add(item);
@@ -126,14 +125,5 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
             nextIsPrice = line.isBlank();
         }
         return items;
-    }
-
-    private static BigDecimal getBigDecimal(String text) {
-        String replaced = text.trim().replace(',', '.');
-        try {
-            return new BigDecimal(replaced);
-        } catch (Exception e) {
-            throw new IllegalStateException("Error value '" + replaced + "'", e);
-        }
     }
 }

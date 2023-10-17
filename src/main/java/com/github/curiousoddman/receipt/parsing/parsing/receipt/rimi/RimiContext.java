@@ -6,6 +6,7 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Data
 public class RimiContext implements Context {
@@ -26,8 +27,21 @@ public class RimiContext implements Context {
         }
     }
 
+    public String getLineMatching(Pattern pattern, int index) {
+        List<String> linesContaining = getLinesMatching(pattern);
+        if (linesContaining.size() > index) {
+            return linesContaining.get(index);
+        } else {
+            return null;
+        }
+    }
+
     public List<String> getLinesContaining(String text) {
         return lines.stream().filter(line -> line.contains(text)).toList();
+    }
+
+    public List<String> getLinesMatching(Pattern pattern) {
+        return lines.stream().filter(line -> pattern.matcher(line).matches()).toList();
     }
 
     public List<String> getLinesAfterContaining(String text) {

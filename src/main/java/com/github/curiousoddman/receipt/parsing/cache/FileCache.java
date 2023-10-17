@@ -24,7 +24,6 @@ public class FileCache {
         String text = valueSupplier.get();
         Files.createDirectories(currentCacheDir);
         Files.writeString(cacheFilePath, text);
-        log.info("Parsing completed");
         return text;
     }
 
@@ -32,5 +31,14 @@ public class FileCache {
     public <T> T getOrCreate(String cacheName, String identifier, Supplier<String> valueSupplier, ThrowingFunction<String, T, ? extends Exception> convertToType) {
         String text = getOrCreate(cacheName, identifier, valueSupplier);
         return convertToType.apply(text);
+    }
+
+    @SneakyThrows
+    public void create(String cacheName, String identifier, String contents) {
+        Path currentCacheDir = CACHE_ROOT.resolve(cacheName);
+        Path cacheFilePath = currentCacheDir.resolve(identifier);
+
+        Files.createDirectories(currentCacheDir);
+        Files.writeString(cacheFilePath, contents);
     }
 }

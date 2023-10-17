@@ -51,25 +51,30 @@ public class App implements ApplicationRunner {
                     continue;
                 }
                 String imageAsText = fileCache.getOrCreate("raw-text", sourcePdfName + ".txt", () -> pdf2Text.convert(file));
-                Receipt receipt = fileCache.getOrCreate("parsed-receipt",
-                                                        sourcePdfName + ".txt",
-                                                        () -> parseWithAnyParser(imageAsText),
-                                                        text -> OBJECT_MAPPER.readValue(text, Receipt.class));
+                Optional<Receipt> receipt = parseWithAnyParser(imageAsText);
+                if (receipt.isPresent()) {
+                    String receiptJson = OBJECT_MAPPER
+                            .writerWithDefaultPrettyPrinter()
+                            .writeValueAsString(receipt.get());
+
+                    fileCache.create("parsed-receipt",
+                                     sourcePdfName + ".txt",
+                                     receiptJson);
+                } else {
+                    log.error("Failed to parse receipt {}", sourcePdfName);
+                }
             }
         }
     }
 
 
     @SneakyThrows
-    private String parseWithAnyParser(String text) {
-        Optional<Receipt> receipt = text2ReceiptList
+    private Optional<Receipt> parseWithAnyParser(String text) {
+        return text2ReceiptList
                 .stream()
                 .map(parser -> tryParseOrNull(text, parser))
                 .filter(Objects::nonNull)
                 .findFirst();
-        return OBJECT_MAPPER
-                .writerWithDefaultPrettyPrinter()
-                .writeValueAsString(receipt.get());
     }
 
     private static Receipt tryParseOrNull(String text, Text2Receipt parser) {
