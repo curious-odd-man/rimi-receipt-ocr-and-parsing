@@ -10,9 +10,11 @@ import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.parsing.Pdf2Text;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.Text2Receipt;
 import com.github.curiousoddman.receipt.parsing.validation.ReceiptValidator;
+import com.github.curiousoddman.receipt.parsing.validation.ValidationStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -37,7 +39,7 @@ public class App implements ApplicationRunner {
                                                                           .build();
     private final        Pdf2Text               pdf2Text;
     private final        List<Text2Receipt>     text2ReceiptList;
-    private final        List<ReceiptValidator> receiptValidatorList;
+    private final        List<ReceiptValidator> receiptValidators;
     private final        FileCache              fileCache;
     private final        IgnoreList             ignoreList;
 
@@ -47,19 +49,28 @@ public class App implements ApplicationRunner {
             List<Path> allPdfFiles = files.filter(App::isPdfFile).toList();
             for (Path file : allPdfFiles) {
                 String sourcePdfName = file.toFile().getName();
+                MDC.put("file", sourcePdfName);
                 if (ignoreList.isIgnored(sourcePdfName)) {
                     continue;
                 }
                 String imageAsText = fileCache.getOrCreate("raw-text", sourcePdfName + ".txt", () -> pdf2Text.convert(file));
-                Optional<Receipt> receipt = parseWithAnyParser(imageAsText);
-                if (receipt.isPresent()) {
+                Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, imageAsText);
+                if (optionalReceipt.isPresent()) {
+                    Receipt receipt = optionalReceipt.get();
                     String receiptJson = OBJECT_MAPPER
                             .writerWithDefaultPrettyPrinter()
-                            .writeValueAsString(receipt.get());
+                            .writeValueAsString(receipt);
 
                     fileCache.create("parsed-receipt",
                                      sourcePdfName + ".txt",
                                      receiptJson);
+                    ValidationStatus validationResult = ValidationStatus.SUCCESS;
+                    for (ReceiptValidator receiptValidator : receiptValidators) {
+                        validationResult = validationResult.merge(receiptValidator.validate(receipt));
+                    }
+                    if (validationResult == ValidationStatus.SUCCESS) {
+                        log.info("Successfully validated receipt {}", sourcePdfName);
+                    }
                 } else {
                     log.error("Failed to parse receipt {}", sourcePdfName);
                 }
@@ -69,17 +80,17 @@ public class App implements ApplicationRunner {
 
 
     @SneakyThrows
-    private Optional<Receipt> parseWithAnyParser(String text) {
+    private Optional<Receipt> parseWithAnyParser(String fileName, String text) {
         return text2ReceiptList
                 .stream()
-                .map(parser -> tryParseOrNull(text, parser))
+                .map(parser -> tryParseOrNull(fileName, text, parser))
                 .filter(Objects::nonNull)
                 .findFirst();
     }
 
-    private static Receipt tryParseOrNull(String text, Text2Receipt parser) {
+    private static Receipt tryParseOrNull(String fileName, String text, Text2Receipt parser) {
         try {
-            return parser.parse(text);
+            return parser.parse(fileName, text);
         } catch (Exception e) {
             log.error("Failed to parse receipt with parser {}", parser.getClass(), e);
             return null;

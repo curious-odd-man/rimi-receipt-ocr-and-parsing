@@ -11,13 +11,14 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 public class Receipt {
-    private String     shopBrand;
-    private String     shopName;
-    private String     cashRegisterNumber;
-    private BigDecimal totalSavings;
-    private BigDecimal totalPayment;
-    private BigDecimal totalVat;
-    private BigDecimal shopBrandMoneyAccumulated;
+    private String        fileName;
+    private String        shopBrand;
+    private String        shopName;
+    private String        cashRegisterNumber;
+    private BigDecimal    totalSavings;
+    private BigDecimal    totalPayment;
+    private BigDecimal    totalVat;
+    private BigDecimal    shopBrandMoneyAccumulated;
     private String        documentNumber;
     private LocalDateTime receiptDateTime;
 

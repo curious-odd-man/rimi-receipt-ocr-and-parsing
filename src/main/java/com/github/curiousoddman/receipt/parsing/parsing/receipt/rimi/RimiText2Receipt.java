@@ -94,35 +94,59 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected Collection<? extends ReceiptItem> getItems(RimiContext context) {
-        Pattern pattern = Pattern.compile("(\\d+([.,]\\d+)?) (\\w+) X (\\d+([.,]\\d+)?) (\\w+|\\w+\\/\\w+) (\\d+([.,]\\d+)?) \\w");
+        Pattern countPricePerUnitAndSumPattern = Pattern.compile("(\\d+([.,]\\d+)?) (\\w+) X (\\d+([.,]\\d+)?) (\\w+|\\w+\\/\\w+) (\\d+([.,]\\d+)?)( \\w)?");
+        Pattern discountLinePattern = Pattern.compile("(Atī\\.|Atl\\.)\\s+-(\\d+[.,]\\d+)\\s+Gala\\s+cena\\s+(\\d+[.,]\\d+).*");
         List<ReceiptItem> items = new ArrayList<>();
         List<String> linesBetween = context.getLinesBetween("KLIENTS:", "Maksājumu karte");
+        linesBetween.add("HackLineThatDoesNotMatchAnyPatternButLetsUsProcessLastItemInList");
         List<String> itemNameBuilder = new ArrayList<>();
-        boolean nextIsPrice = false;
+        Matcher priceLineMatcher = null;
+        Matcher discountLineMatcher = null;
         for (String line : linesBetween) {
-            if (nextIsPrice) {
-                Matcher matcher = pattern.matcher(line);
-                if (matcher.matches()) {
+
+            if (line.isBlank()) {
+                continue;
+            }
+
+            Matcher itemNumbersMatcher = countPricePerUnitAndSumPattern.matcher(line);
+            if (itemNumbersMatcher.matches()) {
+                priceLineMatcher = itemNumbersMatcher;
+                continue;
+            }
+
+            if (priceLineMatcher == null) {
+                itemNameBuilder.add(line);
+            } else {
+                Matcher discountLinePatternMatcher = discountLinePattern.matcher(line);
+                if (discountLinePatternMatcher.matches()) {
+                    discountLineMatcher = discountLinePatternMatcher;
+                } else {
+                    BigDecimal finalCost;
+                    BigDecimal discount = BigDecimal.ZERO;
+                    if (discountLineMatcher != null) {
+                        finalCost = ConversionUtils.getBigDecimal(discountLineMatcher.group(3));
+                        discount = ConversionUtils.getBigDecimal(discountLineMatcher.group(2));
+                    } else {
+                        finalCost = ConversionUtils.getBigDecimal(priceLineMatcher.group(7));
+                    }
+
                     ReceiptItem item = ReceiptItem
                             .builder()
                             .description(Strings.join(itemNameBuilder, ' ').trim())
-                            .count(ConversionUtils.getBigDecimal(matcher.group(1)))
-                            .units(matcher.group(3))
-                            .pricePerUnit(ConversionUtils.getBigDecimal(matcher.group(4)))
-                            .discount(null)
-                            .finalCost(ConversionUtils.getBigDecimal(matcher.group(7)))
+                            .count(ConversionUtils.getBigDecimal(priceLineMatcher.group(1)))
+                            .units(priceLineMatcher.group(3))
+                            .pricePerUnit(ConversionUtils.getBigDecimal(priceLineMatcher.group(4)))
+                            .discount(discount)
+                            .finalCost(finalCost)
                             .build();
 
                     items.add(item);
-
                     itemNameBuilder.clear();
-                } else {
-                    throw new RuntimeException("Pattern does not match");
+                    itemNameBuilder.add(line);
+                    priceLineMatcher = null;
+                    discountLineMatcher = null;
                 }
-            } else {
-                itemNameBuilder.add(line);
             }
-            nextIsPrice = line.isBlank();
         }
         return items;
     }

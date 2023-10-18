@@ -11,10 +11,11 @@ import java.util.Collection;
 public abstract class BasicText2Receipt<T extends Context> implements Text2Receipt {
 
     @Override
-    public Receipt parse(String text) {
+    public Receipt parse(String fileName, String text) {
         T context = getContext(text);
         return Receipt
                 .builder()
+                .fileName(fileName)
                 .shopBrand(getShopBrand(context))
                 .shopName(getShopName(context))
                 .cashRegisterNumber(getCashRegisterNumber(context))
