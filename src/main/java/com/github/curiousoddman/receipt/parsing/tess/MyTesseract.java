@@ -14,8 +14,12 @@ import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 
 @Slf4j
@@ -29,7 +33,6 @@ public class MyTesseract extends Tesseract {
         setLanguage("lav");
         setPageSegMode(1);
         setOcrEngineMode(1);
-        setVariable("tessedit_create_tsv", "1");
         this.fileCache = fileCache;
     }
 
@@ -59,8 +62,8 @@ public class MyTesseract extends Tesseract {
 
                 for (int i = 0; i < imageTotal; i++) {
                     IIOImage oimage = reader.readAll(i, reader.getDefaultReadParam());
-                    plainTextResult.append(doOCR(oimage, inputFile.getPath(), i + 1, false));
-                    tsvTextResult.append(doOCR(oimage, inputFile.getPath(), i + 1, true));
+                    plainTextResult.append(doOCR(oimage, inputFile.getPath(), i + 1, false, null));
+                    tsvTextResult.append(doOCR(oimage, inputFile.getPath(), i + 1, true, null));
                 }
 
 
@@ -88,14 +91,85 @@ public class MyTesseract extends Tesseract {
         }
     }
 
+    @Override
+    public String doOCR(File inputFile, Rectangle rect) throws TesseractException {
+        try {
+            File imageFile = fileCache.getOrCreateFile(inputFile.getName() + ".tiff", () -> {
+                try {
+                    return ImageIOHelper.getImageFile(inputFile);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            int x = rect.x;
+            int y = rect.y;
+            int width = rect.width;
+            int height = rect.height;
+            String rectangledFileName = inputFile + String.format("_%d_%d_%d_%d.tiff", x, y, width, height);
+            fileCache.getOrCreateFile(rectangledFileName, () -> {
+                try {
+                    Path targetFileWithRect = Path.of(rectangledFileName);
+                    Files.copy(inputFile.toPath(), targetFileWithRect);
+                    BufferedImage img = ImageIO.read(targetFileWithRect.toFile());
+                    Graphics2D g2d = img.createGraphics();
+                    g2d.setColor(Color.RED);
+                    g2d.drawRect(x, y, width, height);
+                    g2d.dispose();
+                    ImageIO.write(img, "tiff", targetFileWithRect.toFile());
+                    return targetFileWithRect.toFile();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            String imageFileFormat = ImageIOHelper.getImageFileFormat(imageFile);
+            Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
+            if (!readers.hasNext()) {
+                throw new RuntimeException(ImageIOHelper.JAI_IMAGE_READER_MESSAGE);
+            }
+            ImageReader reader = readers.next();
+            StringBuilder result = new StringBuilder();
+            try (ImageInputStream iis = ImageIO.createImageInputStream(imageFile);) {
+                reader.setInput(iis);
+                int imageTotal = reader.getNumImages(true);
+
+                init();
+                setVariables();
+
+                for (int i = 0; i < imageTotal; i++) {
+                    IIOImage oimage = reader.readAll(i, reader.getDefaultReadParam());
+                    result.append(doOCR(oimage, inputFile.getPath(), i + 1, false, rect));
+                }
+            } finally {
+                // delete temporary TIFF image for PDF
+                if (imageFile != null
+                        && imageFile.exists()
+                        && imageFile != inputFile
+                        && imageFile.getName().startsWith("multipage")
+                        && imageFile.getName().endsWith(ImageIOHelper.TIFF_EXT)) {
+                    imageFile.delete();
+                }
+                reader.dispose();
+                dispose();
+            }
+
+            return result.toString();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new TesseractException(e);
+        }
+    }
+
+
     private String doOCR(IIOImage oimage,
                          String filename,
                          int pageNum,
-                         boolean isTsv) {
+                         boolean isTsv,
+                         Rectangle rect) {
         String text = "";
 
         try {
-            setImage(oimage.getRenderedImage(), null);
+            setImage(oimage.getRenderedImage(), rect);
             ITessAPI.TessBaseAPI handle = getHandle();
             TessAPI api = getAPI();
             if (filename != null && !filename.isEmpty()) {

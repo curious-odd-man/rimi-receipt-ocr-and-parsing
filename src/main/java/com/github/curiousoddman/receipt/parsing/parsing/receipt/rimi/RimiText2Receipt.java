@@ -3,10 +3,15 @@ package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.BasicText2Receipt;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
+import com.github.curiousoddman.receipt.parsing.tess.MyTessWord;
+import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
 import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
 
+import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -18,8 +23,12 @@ import java.util.regex.Pattern;
 
 import static com.github.curiousoddman.receipt.parsing.parsing.Patterns.*;
 
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
+    private final MyTesseract tesseract;
+
     @Override
     protected RimiContext getContext(MyTessResult tessResult) {
         return new RimiContext(tessResult.inputFile(), tessResult.plainText(), tessResult.tsvText());
@@ -65,7 +74,20 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     @Override
     protected BigDecimal getTotalVat(RimiContext context) {
         String line = context.getNextLinesAfterMatching(LINE_BEFORE_VAT_AMOUNTS_LINE).get(0);
-        return ConversionUtils.getBigDecimal(line.split(" ")[5]);
+        String word = line.split(" ")[5];
+        try {
+            return ConversionUtils.getBigDecimal(word);
+        } catch (Exception e) {
+            log.info("Failed to parse vat - retrying... {}", e.getMessage());
+            MyTessWord myTessWord = context.getTessWord(word);
+            try {
+                String text = tesseract.doOCR(context.getOriginalFile(), new Rectangle(myTessWord.left(), myTessWord.top(), myTessWord.width(), myTessWord.height()));
+                return ConversionUtils.getBigDecimal(text);
+            } catch (Exception e1) {
+                log.error("", e1);
+                return BigDecimal.ZERO;
+            }
+        }
     }
 
     @Override

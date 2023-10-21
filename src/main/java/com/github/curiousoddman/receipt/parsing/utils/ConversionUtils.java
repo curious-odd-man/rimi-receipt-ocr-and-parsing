@@ -82,11 +82,19 @@ public class ConversionUtils {
         return tsvText
                 .lines()
                 .map(String::trim)
-                .filter(String::isBlank)
+                .filter(s -> !s.isBlank())
                 .map(line -> line.split("\t"))
-                .map(arr -> new MyTessWord(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]), Integer.parseInt(arr[2]), Integer.parseInt(arr[3]),
-                                           Integer.parseInt(arr[4]), Integer.parseInt(arr[5]), Integer.parseInt(arr[6]), Integer.parseInt(arr[7]),
-                                           Integer.parseInt(arr[8]), Integer.parseInt(arr[9]), Double.parseDouble(arr[10]), arr[11]))
+                .map(ConversionUtils::getMyTessWord)
+                .filter(Objects::nonNull)
                 .toList();
+    }
+
+    private static MyTessWord getMyTessWord(String[] arr) {
+        if (arr.length < 12) {
+            return null;
+        }
+        return new MyTessWord(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]), Integer.parseInt(arr[2]), Integer.parseInt(arr[3]),
+                              Integer.parseInt(arr[4]), Integer.parseInt(arr[5]), Integer.parseInt(arr[6]), Integer.parseInt(arr[7]),
+                              Integer.parseInt(arr[8]), Integer.parseInt(arr[9]), Double.parseDouble(arr[10]), arr[11]);
     }
 }
