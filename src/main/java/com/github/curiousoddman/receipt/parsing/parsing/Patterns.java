@@ -28,4 +28,10 @@ public class Patterns {
     public static final Pattern LINE_BEFORE_VAT_AMOUNTS_LINE = Pattern.compile(".*Nodoklis\\s+Ar\\s+...\\s+Bez\\s+...\\s+...\\s+summa.*");
 
 
+    /*
+    LAIKS 2022-05-28 13:16:08
+     */
+    public static final Pattern RECEIPT_TIME_PATTERN = Pattern.compile("LAIKS\\s+(.*)");
+
+
 }

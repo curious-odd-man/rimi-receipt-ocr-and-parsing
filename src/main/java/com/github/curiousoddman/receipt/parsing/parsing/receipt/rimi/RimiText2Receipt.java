@@ -88,8 +88,9 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected LocalDateTime getReceiptDateTime(RimiContext context) {
+        String time = getFirstGroup(context, RECEIPT_TIME_PATTERN);
         return LocalDateTime.parse(
-                context.getLine(-3),
+                time,
                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         );
     }
