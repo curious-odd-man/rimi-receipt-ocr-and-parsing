@@ -1,5 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.tess;
 
-public record MyTessResult(String plainText, String tsvText) {
+import java.io.File;
+
+public record MyTessResult(File inputFile, String plainText, String tsvText) {
 
 }

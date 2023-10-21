@@ -35,7 +35,7 @@ public class MyTesseract extends Tesseract {
 
     public MyTessResult doMyOCR(File inputFile) throws TesseractException {
         try {
-            File imageFile = fileCache.getOrCreateFile("images-from-pdf", inputFile.getName() + ".tiff", () -> {
+            File imageFile = fileCache.getOrCreateFile(inputFile.getName() + ".tiff", () -> {
                 try {
                     return ImageIOHelper.getImageFile(inputFile);
                 } catch (IOException e) {
@@ -78,6 +78,7 @@ public class MyTesseract extends Tesseract {
             }
 
             return new MyTessResult(
+                    imageFile,
                     plainTextResult.toString(),
                     tsvTextResult.toString()
             );

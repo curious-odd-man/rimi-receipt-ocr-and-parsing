@@ -55,7 +55,7 @@ public class App implements ApplicationRunner {
                 if (ignoreList.isIgnored(sourcePdfName)) {
                     continue;
                 }
-                MyTessResult imageAsText = fileCache.getOrCreate("raw-text", sourcePdfName, () -> pdf2Text.convert(file));
+                MyTessResult imageAsText = fileCache.getOrCreate(sourcePdfName, () -> pdf2Text.convert(file));
                 Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, imageAsText);
                 if (optionalReceipt.isPresent()) {
                     Receipt receipt = optionalReceipt.get();
@@ -63,9 +63,7 @@ public class App implements ApplicationRunner {
                             .writerWithDefaultPrettyPrinter()
                             .writeValueAsString(receipt);
 
-                    fileCache.create("parsed-receipt",
-                                     sourcePdfName + ".txt",
-                                     receiptJson);
+                    fileCache.create(sourcePdfName + ".json", receiptJson);
 
                     validationExecutor.execute(validationStatsCollector, receipt);
                 } else {

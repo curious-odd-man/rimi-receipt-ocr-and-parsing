@@ -13,47 +13,48 @@ import java.util.function.Supplier;
 @Slf4j
 @Component
 public class FileCache {
-    private static final Path CACHE_ROOT = Path.of("D:\\Programming\\git\\caches");
+    private static final Path CACHE_ROOT = Path.of("D:\\Programming\\git\\caches\\cache");
 
     @SneakyThrows
-    public MyTessResult getOrCreate(String cacheName, String identifier, Supplier<MyTessResult> valueSupplier) {
-        Path currentCacheDir = CACHE_ROOT.resolve(cacheName);
-        Path textCacheFilePath = currentCacheDir.resolve(identifier + ".txt");
-        Path tsvCacheFilePath = currentCacheDir.resolve(identifier + ".tsv");
+    public FileCache() {
+        Files.createDirectories(CACHE_ROOT);
+    }
+
+    @SneakyThrows
+    public MyTessResult getOrCreate(String identifier, Supplier<MyTessResult> valueSupplier) {
+        Path textCacheFilePath = CACHE_ROOT.resolve(identifier + ".txt");
+        Path tsvCacheFilePath = CACHE_ROOT.resolve(identifier + ".tsv");
+        Path imageCacheFilePath = CACHE_ROOT.resolve(identifier + ".tiff");
         if (Files.exists(textCacheFilePath) && Files.exists(tsvCacheFilePath)) {
             return new MyTessResult(
+                    imageCacheFilePath.toFile(),
                     Files.readString(textCacheFilePath),
                     Files.readString(tsvCacheFilePath)
             );
         }
 
-        MyTessResult text = valueSupplier.get();
-        Files.createDirectories(currentCacheDir);
-        Files.writeString(textCacheFilePath, text.plainText());
-        Files.writeString(tsvCacheFilePath, text.tsvText());
-        return text;
+        MyTessResult tessResult = valueSupplier.get();
+        Files.writeString(textCacheFilePath, tessResult.plainText());
+        Files.writeString(tsvCacheFilePath, tessResult.tsvText());
+        return tessResult;
     }
 
+
     @SneakyThrows
-    public File getOrCreateFile(String cacheName, String identifier, Supplier<File> valueSupplier) {
-        Path currentCacheDir = CACHE_ROOT.resolve(cacheName);
-        Path cacheFilePath = currentCacheDir.resolve(identifier);
+    public File getOrCreateFile(String identifier, Supplier<File> valueSupplier) {
+        Path cacheFilePath = CACHE_ROOT.resolve(identifier);
         if (Files.exists(cacheFilePath)) {
             return cacheFilePath.toFile();
         }
 
         File createdFile = valueSupplier.get();
-        Files.createDirectories(currentCacheDir);
         Files.copy(createdFile.toPath(), cacheFilePath);
         return createdFile;
     }
 
     @SneakyThrows
-    public void create(String cacheName, String identifier, String contents) {
-        Path currentCacheDir = CACHE_ROOT.resolve(cacheName);
-        Path cacheFilePath = currentCacheDir.resolve(identifier);
-
-        Files.createDirectories(currentCacheDir);
+    public void create(String identifier, String contents) {
+        Path cacheFilePath = CACHE_ROOT.resolve(identifier);
         Files.writeString(cacheFilePath, contents);
     }
 }

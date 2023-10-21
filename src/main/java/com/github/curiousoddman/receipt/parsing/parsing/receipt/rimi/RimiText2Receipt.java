@@ -21,8 +21,8 @@ import static com.github.curiousoddman.receipt.parsing.parsing.Patterns.*;
 @Component
 public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     @Override
-    protected RimiContext getContext(MyTessResult text) {
-        return new RimiContext(text.plainText(), text.tsvText());
+    protected RimiContext getContext(MyTessResult tessResult) {
+        return new RimiContext(tessResult.inputFile(), tessResult.plainText(), tessResult.tsvText());
     }
 
     @Override
