@@ -10,8 +10,8 @@ import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.parsing.Pdf2Text;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.Text2Receipt;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
-import com.github.curiousoddman.receipt.parsing.validation.ReceiptValidator;
-import com.github.curiousoddman.receipt.parsing.validation.ValidationStatus;
+import com.github.curiousoddman.receipt.parsing.validation.ValidationExecutor;
+import com.github.curiousoddman.receipt.parsing.validation.ValidationStatsCollector;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -33,19 +33,20 @@ import java.util.stream.Stream;
 @Component
 @RequiredArgsConstructor
 public class App implements ApplicationRunner {
-    private static final ObjectMapper           OBJECT_MAPPER = JsonMapper.builder()
-                                                                          .addModule(new ParameterNamesModule())
-                                                                          .addModule(new Jdk8Module())
-                                                                          .addModule(new JavaTimeModule())
-                                                                          .build();
-    private final        Pdf2Text               pdf2Text;
-    private final        List<Text2Receipt>     text2ReceiptList;
-    private final        List<ReceiptValidator> receiptValidators;
-    private final        FileCache              fileCache;
-    private final        IgnoreList             ignoreList;
+    private static final ObjectMapper       OBJECT_MAPPER = JsonMapper.builder()
+                                                                      .addModule(new ParameterNamesModule())
+                                                                      .addModule(new Jdk8Module())
+                                                                      .addModule(new JavaTimeModule())
+                                                                      .build();
+    private final        Pdf2Text           pdf2Text;
+    private final        List<Text2Receipt> text2ReceiptList;
+    private final        FileCache          fileCache;
+    private final        IgnoreList         ignoreList;
+    private final        ValidationExecutor validationExecutor;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
+        ValidationStatsCollector validationStatsCollector = new ValidationStatsCollector();
         try (Stream<Path> files = Files.list(Paths.get("D:\\Programming\\git\\private-tools\\gmail-client\\output"))) {
             List<Path> allPdfFiles = files.filter(App::isPdfFile).toList();
             for (Path file : allPdfFiles) {
@@ -65,13 +66,8 @@ public class App implements ApplicationRunner {
                     fileCache.create("parsed-receipt",
                                      sourcePdfName + ".txt",
                                      receiptJson);
-                    ValidationStatus validationResult = ValidationStatus.SUCCESS;
-                    for (ReceiptValidator receiptValidator : receiptValidators) {
-                        validationResult = validationResult.merge(receiptValidator.validate(receipt));
-                    }
-                    if (validationResult == ValidationStatus.SUCCESS) {
-                        log.info("Successfully validated receipt {}", sourcePdfName);
-                    }
+
+                    validationExecutor.execute(validationStatsCollector, receipt);
                 } else {
                     log.error("Failed to parse receipt {}", sourcePdfName);
                 }

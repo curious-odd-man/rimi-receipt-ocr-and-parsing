@@ -9,9 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class ItemNumbersValidator extends ReceiptValidatorBase {
+public class ItemNumbersValidator implements ReceiptValidator {
     @Override
-    protected List<Object> performValidation(Receipt receipt) {
+    public ValidationResult validate(Receipt receipt) {
         List<Object> errors = new ArrayList<>();
         for (ReceiptItem item : receipt.getItems()) {
             BigDecimal fullPrice = item.getCount().multiply(item.getPricePerUnit());
@@ -22,6 +22,6 @@ public class ItemNumbersValidator extends ReceiptValidatorBase {
                 );
             }
         }
-        return errors;
+        return new ValidationResult(getClass(), errors);
     }
 }

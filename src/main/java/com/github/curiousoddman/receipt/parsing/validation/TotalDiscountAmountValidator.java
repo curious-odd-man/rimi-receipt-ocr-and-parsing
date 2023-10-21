@@ -8,9 +8,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Component
-public class TotaDiscountAmountValidator extends ReceiptValidatorBase {
+public class TotalDiscountAmountValidator implements ReceiptValidator {
     @Override
-    protected List<Object> performValidation(Receipt receipt) {
+    public ValidationResult validate(Receipt receipt) {
         BigDecimal totalSavings = receipt.getTotalSavings();
         BigDecimal itemsTotalDiscounts = BigDecimal.ZERO;
         for (ReceiptItem item : receipt.getItems()) {
@@ -18,11 +18,11 @@ public class TotaDiscountAmountValidator extends ReceiptValidatorBase {
         }
 
         if (totalSavings.compareTo(itemsTotalDiscounts) == 0) {
-            return List.of();
+            return new ValidationResult(getClass());
         }
 
-        return List.of(
+        return new ValidationResult(getClass(), List.of(
                 String.format("Total savings %s not equal to sum of item discounts %s", totalSavings, itemsTotalDiscounts)
-        );
+        ));
     }
 }
