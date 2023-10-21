@@ -42,12 +42,11 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected BigDecimal getTotalSavings(RimiContext context) {
-        String text = "Nopelnītā Mans Rimi nauda";
-        String line = context.getLineContaining(text, 0);
-        if (line != null) {
-            return ConversionUtils.getBigDecimalAfterToken(line, text);
+        String totalSavings = getFirstGroup(context, SAVINGS_AMOUNT);
+        if (totalSavings != null) {
+            return ConversionUtils.getBigDecimal(totalSavings);
         } else {
-            return null;
+            return BigDecimal.ZERO;
         }
     }
 
@@ -72,9 +71,13 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected BigDecimal getShopBrandMoneyAccumulated(RimiContext context) {
-        String text = "Mans Rimi naudas uzkrājums";
+        String text = "Nopelnītā Mans Rimi nauda";
         String line = context.getLineContaining(text, 0);
-        return ConversionUtils.getBigDecimalAfterToken(line, text);
+        if (line != null) {
+            return ConversionUtils.getBigDecimalAfterToken(line, text);
+        } else {
+            return BigDecimal.ZERO;
+        }
     }
 
     @Override
