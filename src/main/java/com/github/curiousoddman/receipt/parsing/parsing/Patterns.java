@@ -20,4 +20,12 @@ public class Patterns {
     public static final Pattern BANK_CARD_AMOUNT = Pattern.compile("Bankas karte +(\\d+[.,]\\d+).*");
 
     public static final Pattern SAVINGS_AMOUNT = Pattern.compile("Tavs\\s+ietaupījums\\s+(\\d+[.,]\\d+).*");
+
+    /*
+    Nodoklis Ar PWN Bez PVN PWN summa
+    Nodoklis Ar PVN Bez PVN PVN summa
+     */
+    public static final Pattern LINE_BEFORE_VAT_AMOUNTS_LINE = Pattern.compile(".*Nodoklis\\s+Ar\\s+...\\s+Bez\\s+...\\s+...\\s+summa.*");
+
+
 }

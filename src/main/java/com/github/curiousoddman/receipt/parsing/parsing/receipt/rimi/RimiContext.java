@@ -12,15 +12,15 @@ import java.util.regex.Pattern;
 
 @Data
 public class RimiContext implements Context {
-    private final String       text;
-    private final String       tsvText;
-    private final List<String>     lines;
+    private final String           rawReceiptText;
+    private final String           tsvText;
+    private final List<String>     rawReceiptLines;
     private final List<MyTessWord> tessWords;
 
     public RimiContext(String text, String tsvText) {
-        this.text = text;
+        rawReceiptText = text;
         this.tsvText = tsvText;
-        lines = text.lines().toList();
+        rawReceiptLines = text.lines().toList();
         tessWords = ConversionUtils.tsvToTessWords(tsvText);
     }
 
@@ -43,19 +43,19 @@ public class RimiContext implements Context {
     }
 
     public List<String> getLinesContaining(String text) {
-        return lines.stream().filter(line -> line.contains(text)).toList();
+        return rawReceiptLines.stream().filter(line -> line.contains(text)).toList();
     }
 
     public List<String> getLinesMatching(Pattern pattern) {
-        return lines.stream().filter(line -> pattern.matcher(line).matches()).toList();
+        return rawReceiptLines.stream().filter(line -> pattern.matcher(line).matches()).toList();
     }
 
-    public List<String> getLinesAfterContaining(String text) {
+    public List<String> getNextLinesAfterMatching(Pattern pattern) {
         List<String> result = new ArrayList<>();
-        Iterator<String> iterator = lines.iterator();
+        Iterator<String> iterator = rawReceiptLines.iterator();
         while (iterator.hasNext()) {
             String line = iterator.next();
-            if (line.contains(text) && iterator.hasNext()) {
+            if (pattern.matcher(line).matches() && iterator.hasNext()) {
                 result.add(iterator.next());
             }
         }
@@ -64,15 +64,15 @@ public class RimiContext implements Context {
 
     public String getLine(int index) {
         if (index >= 0) {
-            return lines.get(index);
+            return rawReceiptLines.get(index);
         } else {
-            return lines.get(lines.size() + index);
+            return rawReceiptLines.get(rawReceiptLines.size() + index);
         }
     }
 
     public List<String> getLinesBetween(String beginning, String end) {
         List<String> result = new ArrayList<>();
-        Iterator<String> iterator = lines.iterator();
+        Iterator<String> iterator = rawReceiptLines.iterator();
         boolean addLines = false;
         while (iterator.hasNext()) {
             String line = iterator.next();
@@ -86,5 +86,10 @@ public class RimiContext implements Context {
             }
         }
         return result;
+    }
+
+    @Override
+    public String getText() {
+        return rawReceiptText;
     }
 }

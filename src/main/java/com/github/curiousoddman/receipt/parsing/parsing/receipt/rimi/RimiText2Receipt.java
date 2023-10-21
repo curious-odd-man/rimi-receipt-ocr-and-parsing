@@ -64,8 +64,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected BigDecimal getTotalVat(RimiContext context) {
-        String text = "Nodoklis Ar PVN Bez PVN PVN summa";
-        String line = context.getLinesAfterContaining(text).get(0);
+        String line = context.getNextLinesAfterMatching(LINE_BEFORE_VAT_AMOUNTS_LINE).get(0);
         return ConversionUtils.getBigDecimal(line.split(" ")[5]);
     }
 
