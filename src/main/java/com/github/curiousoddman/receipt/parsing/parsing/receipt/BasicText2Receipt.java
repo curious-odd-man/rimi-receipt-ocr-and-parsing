@@ -2,6 +2,7 @@ package com.github.curiousoddman.receipt.parsing.parsing.receipt;
 
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
+import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,7 +12,7 @@ import java.util.Collection;
 public abstract class BasicText2Receipt<T extends Context> implements Text2Receipt {
 
     @Override
-    public Receipt parse(String fileName, String text) {
+    public Receipt parse(String fileName, MyTessResult text) {
         T context = getContext(text);
         return Receipt
                 .builder()
@@ -29,7 +30,7 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
                 .build();
     }
 
-    protected abstract T getContext(String text);
+    protected abstract T getContext(MyTessResult text);
 
     protected abstract String getShopBrand(T context);
 

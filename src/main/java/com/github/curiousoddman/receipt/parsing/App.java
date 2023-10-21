@@ -9,6 +9,7 @@ import com.github.curiousoddman.receipt.parsing.cache.FileCache;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.parsing.Pdf2Text;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.Text2Receipt;
+import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.validation.ReceiptValidator;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationStatus;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +54,7 @@ public class App implements ApplicationRunner {
                 if (ignoreList.isIgnored(sourcePdfName)) {
                     continue;
                 }
-                String imageAsText = fileCache.getOrCreate("raw-text", sourcePdfName + ".txt", () -> pdf2Text.convert(file));
+                MyTessResult imageAsText = fileCache.getOrCreate("raw-text", sourcePdfName, () -> pdf2Text.convert(file));
                 Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, imageAsText);
                 if (optionalReceipt.isPresent()) {
                     Receipt receipt = optionalReceipt.get();
@@ -80,7 +81,7 @@ public class App implements ApplicationRunner {
 
 
     @SneakyThrows
-    private Optional<Receipt> parseWithAnyParser(String fileName, String text) {
+    private Optional<Receipt> parseWithAnyParser(String fileName, MyTessResult text) {
         return text2ReceiptList
                 .stream()
                 .map(parser -> tryParseOrNull(fileName, text, parser))
@@ -88,7 +89,7 @@ public class App implements ApplicationRunner {
                 .findFirst();
     }
 
-    private static Receipt tryParseOrNull(String fileName, String text, Text2Receipt parser) {
+    private static Receipt tryParseOrNull(String fileName, MyTessResult text, Text2Receipt parser) {
         try {
             return parser.parse(fileName, text);
         } catch (Exception e) {

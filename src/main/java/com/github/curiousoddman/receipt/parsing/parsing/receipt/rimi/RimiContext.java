@@ -1,6 +1,8 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.Context;
+import com.github.curiousoddman.receipt.parsing.tess.MyTessWord;
+import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -11,11 +13,15 @@ import java.util.regex.Pattern;
 @Data
 public class RimiContext implements Context {
     private final String       text;
-    private final List<String> lines;
+    private final String       tsvText;
+    private final List<String>     lines;
+    private final List<MyTessWord> tessWords;
 
-    public RimiContext(String text) {
+    public RimiContext(String text, String tsvText) {
         this.text = text;
+        this.tsvText = tsvText;
         lines = text.lines().toList();
+        tessWords = ConversionUtils.tsvToTessWords(tsvText);
     }
 
     public String getLineContaining(String text, int index) {

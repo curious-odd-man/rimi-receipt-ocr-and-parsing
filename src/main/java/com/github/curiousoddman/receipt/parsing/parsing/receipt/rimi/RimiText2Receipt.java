@@ -2,6 +2,7 @@ package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.BasicText2Receipt;
+import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
@@ -15,11 +16,13 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.curiousoddman.receipt.parsing.parsing.Patterns.*;
+
 @Component
 public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     @Override
-    protected RimiContext getContext(String text) {
-        return new RimiContext(text);
+    protected RimiContext getContext(MyTessResult text) {
+        return new RimiContext(text.plainText(), text.tsvText());
     }
 
     @Override
@@ -50,12 +53,9 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected BigDecimal getTotalPayment(RimiContext context) {
-        Pattern paymentAmountPattern = Pattern.compile("Samaksai EUR +(.*)");
-        String paymentAmount = getFirstGroup(context, paymentAmountPattern);
-        Pattern totalAmountPattern = Pattern.compile("KOPA: +(\\d+[.,]\\d+) +EUR.*");
-        String totalAmount = getFirstGroup(context, totalAmountPattern);
-        Pattern bankCardPattern = Pattern.compile("Bankas karte +(\\d+[.,]\\d+).*");
-        String bankCardAmount = getFirstGroup(context, bankCardPattern);
+        String paymentAmount = getFirstGroup(context, PAYMENT_SUM);
+        String totalAmount = getFirstGroup(context, TOTAL_AMOUNT);
+        String bankCardAmount = getFirstGroup(context, BANK_CARD_AMOUNT);
         return ConversionUtils.getBigDecimal(paymentAmount, totalAmount, bankCardAmount);
     }
 
@@ -94,8 +94,6 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected Collection<? extends ReceiptItem> getItems(RimiContext context) {
-        Pattern countPricePerUnitAndSumPattern = Pattern.compile("(\\d+([.,]\\d+)?) (\\w+) X (\\d+([.,]\\d+)?) (\\w+|\\w+\\/\\w+) (\\d+([.,]\\d+)?)( \\w)?");
-        Pattern discountLinePattern = Pattern.compile("(Atī\\.|Atl\\.)\\s+-(\\d+[.,]\\d+)\\s+Gala\\s+cena\\s+(\\d+[.,]\\d+).*");
         List<ReceiptItem> items = new ArrayList<>();
         List<String> linesBetween = context.getLinesBetween("KLIENTS:", "Maksājumu karte");
         linesBetween.add("HackLineThatDoesNotMatchAnyPatternButLetsUsProcessLastItemInList");
@@ -108,7 +106,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 continue;
             }
 
-            Matcher itemNumbersMatcher = countPricePerUnitAndSumPattern.matcher(line);
+            Matcher itemNumbersMatcher = COUNT_PRICE_AND_SUM_LINE.matcher(line);
             if (itemNumbersMatcher.matches()) {
                 priceLineMatcher = itemNumbersMatcher;
                 continue;
@@ -117,15 +115,15 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
             if (priceLineMatcher == null) {
                 itemNameBuilder.add(line);
             } else {
-                Matcher discountLinePatternMatcher = discountLinePattern.matcher(line);
+                Matcher discountLinePatternMatcher = ITEM_DISCOUNT_LINE_PATTERN.matcher(line);
                 if (discountLinePatternMatcher.matches()) {
                     discountLineMatcher = discountLinePatternMatcher;
                 } else {
                     BigDecimal finalCost;
                     BigDecimal discount = BigDecimal.ZERO;
                     if (discountLineMatcher != null) {
-                        finalCost = ConversionUtils.getBigDecimal(discountLineMatcher.group(3));
-                        discount = ConversionUtils.getBigDecimal(discountLineMatcher.group(2));
+                        finalCost = ConversionUtils.getBigDecimal(discountLineMatcher.group(2));
+                        discount = ConversionUtils.getBigDecimal(discountLineMatcher.group(1));
                     } else {
                         finalCost = ConversionUtils.getBigDecimal(priceLineMatcher.group(7));
                     }

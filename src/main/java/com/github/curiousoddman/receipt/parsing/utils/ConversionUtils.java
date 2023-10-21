@@ -1,5 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.utils;
 
+import com.github.curiousoddman.receipt.parsing.tess.MyTessWord;
+
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -74,5 +76,17 @@ public class ConversionUtils {
             }
         }
         return null;
+    }
+
+    public static List<MyTessWord> tsvToTessWords(String tsvText) {
+        return tsvText
+                .lines()
+                .map(String::trim)
+                .filter(String::isBlank)
+                .map(line -> line.split("\t"))
+                .map(arr -> new MyTessWord(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]), Integer.parseInt(arr[2]), Integer.parseInt(arr[3]),
+                                           Integer.parseInt(arr[4]), Integer.parseInt(arr[5]), Integer.parseInt(arr[6]), Integer.parseInt(arr[7]),
+                                           Integer.parseInt(arr[8]), Integer.parseInt(arr[9]), Double.parseDouble(arr[10]), arr[11]))
+                .toList();
     }
 }
