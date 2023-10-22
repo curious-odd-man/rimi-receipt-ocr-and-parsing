@@ -150,7 +150,14 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                         finalCost = ConversionUtils.getBigDecimal(discountLineMatcher.group(2));
                         discount = ConversionUtils.getBigDecimal(discountLineMatcher.group(1));
                     } else {
-                        finalCost = ConversionUtils.getBigDecimal(priceLineMatcher.group(7));
+                        String finalCostGroupValue = priceLineMatcher.group(7).trim();
+                        // If line looks like this: 2 gab X 2,99 EUR 5,98 A -> then group 7 is 5,98 A
+                        int indexOfSpace = finalCostGroupValue.indexOf(' ');
+                        if (indexOfSpace >= 0) {
+                            finalCost = ConversionUtils.getBigDecimal(finalCostGroupValue.substring(0, indexOfSpace));
+                        } else {
+                            finalCost = ConversionUtils.getBigDecimal(finalCostGroupValue);
+                        }
                     }
 
                     ReceiptItem item = ReceiptItem

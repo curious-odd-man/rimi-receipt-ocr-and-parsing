@@ -124,9 +124,6 @@ public class MyTesseract extends Tesseract {
 
             String imageFileFormat = ImageIOHelper.getImageFileFormat(imageFile);
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
-            if (!readers.hasNext()) {
-                throw new RuntimeException(ImageIOHelper.JAI_IMAGE_READER_MESSAGE);
-            }
             ImageReader reader = readers.next();
             StringBuilder result = new StringBuilder();
             try (ImageInputStream iis = ImageIO.createImageInputStream(imageFile);) {

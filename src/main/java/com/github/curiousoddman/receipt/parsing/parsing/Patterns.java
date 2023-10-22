@@ -6,8 +6,9 @@ public class Patterns {
     /*
     1,076 kg X 2,99 EUR/kg 3,22 A
     1 gab X 3,19 EUR 371912
+    1 gab X 1,29 EUR +292
      */
-    public static final Pattern COUNT_PRICE_AND_SUM_LINE = Pattern.compile("(\\d+([.,]\\d+)?) (\\w+) X (\\d+([.,]\\d+)?) (\\w+|\\w+\\/\\w+) (\\d+([.,]\\d+)?)( \\w)?");
+    public static final Pattern COUNT_PRICE_AND_SUM_LINE = Pattern.compile("(\\d+([.,]\\d+)?) +(gab|kg) +X +(\\d+([.,]\\d+)?) +EUR(/kg)? +(.*)");
 
     /*
     Atī. -0,33 Gala cena 2,89
