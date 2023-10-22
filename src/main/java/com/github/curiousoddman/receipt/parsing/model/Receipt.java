@@ -13,12 +13,12 @@ public class Receipt {
     private String        fileName;
     private String        shopBrand;
     private String        shopName;
-    private String        cashRegisterNumber;
-    private ReceiptNumber totalSavings;
-    private ReceiptNumber totalPayment;
-    private ReceiptNumber totalVat;
-    private ReceiptNumber shopBrandMoneyAccumulated;
-    private String        documentNumber;
+    private String       cashRegisterNumber;
+    private MyBigDecimal totalSavings;
+    private MyBigDecimal totalPayment;
+    private MyBigDecimal totalVat;
+    private MyBigDecimal shopBrandMoneyAccumulated;
+    private String       documentNumber;
     private LocalDateTime receiptDateTime;
 
     @Singular

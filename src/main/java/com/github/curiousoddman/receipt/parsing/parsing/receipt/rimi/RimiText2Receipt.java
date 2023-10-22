@@ -1,7 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
-import com.github.curiousoddman.receipt.parsing.model.ReceiptNumber;
+import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.BasicText2Receipt;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessWord;
@@ -30,8 +30,9 @@ import static com.github.curiousoddman.receipt.parsing.parsing.Patterns.*;
 @Component
 @RequiredArgsConstructor
 public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
-    private final MyTesseract          tesseract;
-    private final ItemNumbersValidator itemNumbersValidator;
+    public static final MyBigDecimal RECEIPT_NUMBER_ZERO = new MyBigDecimal(BigDecimal.ZERO, null);
+    private final       MyTesseract  tesseract;
+    private final       ItemNumbersValidator itemNumbersValidator;
 
     @Override
     protected RimiContext getContext(MyTessResult tessResult) {
@@ -54,17 +55,17 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     }
 
     @Override
-    protected ReceiptNumber getTotalSavings(RimiContext context) {
+    protected MyBigDecimal getTotalSavings(RimiContext context) {
         String totalSavings = getFirstGroup(context, SAVINGS_AMOUNT);
         if (totalSavings != null) {
             return ConversionUtils.getReceiptNumber(totalSavings);
         } else {
-            return new ReceiptNumber(BigDecimal.ZERO, null);
+            return RECEIPT_NUMBER_ZERO;
         }
     }
 
     @Override
-    protected ReceiptNumber getTotalPayment(RimiContext context) {
+    protected MyBigDecimal getTotalPayment(RimiContext context) {
         String paymentAmount = getFirstGroup(context, PAYMENT_SUM);
         String totalAmount = getFirstGroup(context, TOTAL_AMOUNT);
         String bankCardAmount = getFirstGroup(context, BANK_CARD_AMOUNT);
@@ -76,7 +77,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     }
 
     @Override
-    protected ReceiptNumber getTotalVat(RimiContext context) {
+    protected MyBigDecimal getTotalVat(RimiContext context) {
         String line = context.getNextLinesAfterMatching(LINE_BEFORE_VAT_AMOUNTS_LINE).get(0);
         String word = line.split(" ")[5];
         try {
@@ -89,19 +90,19 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 return ConversionUtils.getReceiptNumber(text);
             } catch (Exception e1) {
                 log.error("", e1);
-                return new ReceiptNumber(BigDecimal.ZERO, null);
+                return RECEIPT_NUMBER_ZERO;
             }
         }
     }
 
     @Override
-    protected ReceiptNumber getShopBrandMoneyAccumulated(RimiContext context) {
+    protected MyBigDecimal getShopBrandMoneyAccumulated(RimiContext context) {
         String text = "Nopelnītā Mans Rimi nauda";
         String line = context.getLineContaining(text, 0);
         if (line != null) {
             return ConversionUtils.getBigDecimalAfterToken(line, text);
         } else {
-            return new ReceiptNumber(BigDecimal.ZERO, null);
+            return RECEIPT_NUMBER_ZERO;
         }
     }
 
@@ -162,8 +163,8 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     }
 
     private ReceiptItem createItem(String line, Matcher discountLineMatcher, Matcher priceLineMatcher, List<String> itemNameBuilder) {
-        ReceiptNumber finalCost;
-        ReceiptNumber discount = new ReceiptNumber(BigDecimal.ZERO, null);
+        MyBigDecimal finalCost;
+        MyBigDecimal discount = RECEIPT_NUMBER_ZERO;
         if (discountLineMatcher != null) {
             finalCost = ConversionUtils.getReceiptNumber(discountLineMatcher.group(2));
             discount = ConversionUtils.getReceiptNumber(discountLineMatcher.group(1));
@@ -204,8 +205,11 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 new ReceiptNumberWithSetter(item.getCount(), ReceiptItem::setCount)
         );
         for (ReceiptNumberWithSetter rnWithSetter : allNumbers) {
-            ReceiptNumber rn = rnWithSetter.rn();
-            BiConsumer<ReceiptItem, ReceiptNumber> setter = rnWithSetter.setter();
+            MyBigDecimal rn = rnWithSetter.rn();
+            if (rn == RECEIPT_NUMBER_ZERO) {
+                continue;
+            }
+            BiConsumer<ReceiptItem, MyBigDecimal> setter = rnWithSetter.setter();
             List<MyTessWord> tessWords = context.getTessWords(rn.text());
             if (tessWords.size() == 1) {
                 MyTessWord myTessWord = tessWords.get(0);
@@ -224,7 +228,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         return item;
     }
 
-    private record ReceiptNumberWithSetter(ReceiptNumber rn, BiConsumer<ReceiptItem, ReceiptNumber> setter) {
+    private record ReceiptNumberWithSetter(MyBigDecimal rn, BiConsumer<ReceiptItem, MyBigDecimal> setter) {
 
     }
 }

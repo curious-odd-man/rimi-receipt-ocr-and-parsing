@@ -2,7 +2,7 @@ package com.github.curiousoddman.receipt.parsing.parsing.receipt;
 
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
-import com.github.curiousoddman.receipt.parsing.model.ReceiptNumber;
+import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 
 import java.time.LocalDateTime;
@@ -38,13 +38,13 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
 
     protected abstract String getCashRegisterNumber(T context);
 
-    protected abstract ReceiptNumber getTotalSavings(T context);
+    protected abstract MyBigDecimal getTotalSavings(T context);
 
-    protected abstract ReceiptNumber getTotalPayment(T context);
+    protected abstract MyBigDecimal getTotalPayment(T context);
 
-    protected abstract ReceiptNumber getTotalVat(T context);
+    protected abstract MyBigDecimal getTotalVat(T context);
 
-    protected abstract ReceiptNumber getShopBrandMoneyAccumulated(T context);
+    protected abstract MyBigDecimal getShopBrandMoneyAccumulated(T context);
 
     protected abstract String getDocumentNumber(T context);
 

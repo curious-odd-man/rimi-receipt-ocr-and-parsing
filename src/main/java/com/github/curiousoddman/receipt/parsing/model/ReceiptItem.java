@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @Data
 public class ReceiptItem {
     private String        description;
-    private String        category;
-    private ReceiptNumber count;
-    private ReceiptNumber pricePerUnit;
-    private String        units;
-    private ReceiptNumber discount;
-    private ReceiptNumber finalCost;
+    private String       category;
+    private MyBigDecimal count;
+    private MyBigDecimal pricePerUnit;
+    private String       units;
+    private MyBigDecimal discount;
+    private MyBigDecimal finalCost;
 }

@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.math.BigDecimal;
 
-public record ReceiptNumber(@JsonValue BigDecimal value, String text) {
+public record MyBigDecimal(@JsonValue BigDecimal value, String text) {
 }
