@@ -65,14 +65,6 @@ public class RimiContext implements Context {
         return result;
     }
 
-    public String getLine(int index) {
-        if (index >= 0) {
-            return rawReceiptLines.get(index);
-        } else {
-            return rawReceiptLines.get(rawReceiptLines.size() + index);
-        }
-    }
-
     public List<String> getLinesBetween(String beginning, String end) {
         List<String> result = new ArrayList<>();
         Iterator<String> iterator = rawReceiptLines.iterator();
@@ -102,5 +94,12 @@ public class RimiContext implements Context {
                 .filter(mtw -> mtw.text().equals(text))
                 .findAny()
                 .orElseThrow();
+    }
+
+    public List<MyTessWord> getTessWords(String text) {
+        return tessWords
+                .stream()
+                .filter(mtw -> mtw.text().equals(text))
+                .toList();
     }
 }

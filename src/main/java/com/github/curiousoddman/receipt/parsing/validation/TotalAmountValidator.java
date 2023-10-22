@@ -11,10 +11,10 @@ import java.util.List;
 public class TotalAmountValidator implements ReceiptValidator {
     @Override
     public ValidationResult validate(Receipt receipt) {
-        BigDecimal totalPayment = receipt.getTotalPayment();
+        BigDecimal totalPayment = receipt.getTotalPayment().value();
         BigDecimal itemPriceSum = BigDecimal.ZERO;
         for (ReceiptItem item : receipt.getItems()) {
-            itemPriceSum = itemPriceSum.add(item.getFinalCost());
+            itemPriceSum = itemPriceSum.add(item.getFinalCost().value());
         }
 
         if (totalPayment.compareTo(itemPriceSum) == 0) {

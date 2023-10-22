@@ -1,5 +1,6 @@
 package com.github.curiousoddman.receipt.parsing.utils;
 
+import com.github.curiousoddman.receipt.parsing.model.ReceiptNumber;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessWord;
 
 import java.math.BigDecimal;
@@ -11,10 +12,13 @@ import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
 public class ConversionUtils {
-    public static BigDecimal getBigDecimal(String text) {
-        String replaced = text.trim().replace(',', '.');
+    public static ReceiptNumber getReceiptNumber(String text) {
+        String replaced = text
+                .trim()
+                .replace(',', '.')
+                .replace(" ", ""); // Values like '0. 50'
         try {
-            return new BigDecimal(replaced);
+            return new ReceiptNumber(new BigDecimal(replaced), text);
         } catch (Exception e) {
             throw new IllegalStateException("Error value '" + replaced + "'", e);
         }
@@ -27,7 +31,7 @@ public class ConversionUtils {
      * @param texts input text values
      * @return BigDecimal value
      */
-    public static BigDecimal getBigDecimal(String... texts) {
+    public static ReceiptNumber getReceiptNumber(String... texts) {
         Map<String, Long> countsPerText = Arrays
                 .stream(texts)
                 .filter(Objects::nonNull)
@@ -41,7 +45,7 @@ public class ConversionUtils {
         for (List<String> values : frequencyToValuesMap.values()) {
             for (String value : values) {
                 try {
-                    return getBigDecimal(value);
+                    return getReceiptNumber(value);
                 } catch (Exception e) {
                     if (suppressed != null) {
                         e.addSuppressed(suppressed);
@@ -58,11 +62,11 @@ public class ConversionUtils {
         throw noSuchElementException;
     }
 
-    public static BigDecimal getBigDecimalAfterToken(String line, String token) {
+    public static ReceiptNumber getBigDecimalAfterToken(String line, String token) {
         String[] splitByProperty = line.split(token);
         for (String s : splitByProperty) {
             if (!s.isBlank()) {
-                return getBigDecimal(s);
+                return getReceiptNumber(s);
             }
         }
         return null;

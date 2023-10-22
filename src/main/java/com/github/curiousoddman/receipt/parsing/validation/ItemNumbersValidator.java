@@ -15,14 +15,18 @@ public class ItemNumbersValidator implements ReceiptValidator {
     public ValidationResult validate(Receipt receipt) {
         List<Object> errors = new ArrayList<>();
         for (ReceiptItem item : receipt.getItems()) {
-            BigDecimal fullPrice = item.getCount().multiply(item.getPricePerUnit());
-            BigDecimal discountedPrice = fullPrice.subtract(item.getDiscount()).setScale(2, RoundingMode.HALF_UP);
-            if (discountedPrice.compareTo(item.getFinalCost()) != 0) {
+            if (!isItemValid(item)) {
                 errors.add(
                         String.format("Items numbers are inconsistent: %s", item)
                 );
             }
         }
         return new ValidationResult(getClass(), errors);
+    }
+
+    public boolean isItemValid(ReceiptItem item) {
+        BigDecimal fullPrice = item.getCount().value().multiply(item.getPricePerUnit().value());
+        BigDecimal discountedPrice = fullPrice.subtract(item.getDiscount().value()).setScale(2, RoundingMode.HALF_UP);
+        return discountedPrice.compareTo(item.getFinalCost().value()) == 0;
     }
 }
