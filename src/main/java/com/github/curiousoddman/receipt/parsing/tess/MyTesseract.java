@@ -32,8 +32,6 @@ public class MyTesseract extends Tesseract {
     public MyTesseract(FileCache fileCache) {
         setDatapath("D:\\Programming\\git\\private-tools\\receipts-parsing\\tes");
         setLanguage("lav");
-        setPageSegMode(1);
-        setOcrEngineMode(1);
         this.fileCache = fileCache;
     }
 
