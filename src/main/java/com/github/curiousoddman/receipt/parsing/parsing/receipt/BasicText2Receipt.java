@@ -12,8 +12,8 @@ import java.util.Collection;
 public abstract class BasicText2Receipt<T extends Context> implements Text2Receipt {
 
     @Override
-    public Receipt parse(String fileName, MyTessResult text) {
-        T context = getContext(text);
+    public Receipt parse(String fileName, MyTessResult myTessResult) {
+        T context = getContext(myTessResult);
         return Receipt
                 .builder()
                 .fileName(fileName)

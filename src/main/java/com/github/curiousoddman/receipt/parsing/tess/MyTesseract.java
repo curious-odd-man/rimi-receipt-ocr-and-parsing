@@ -2,6 +2,7 @@ package com.github.curiousoddman.receipt.parsing.tess;
 
 import com.github.curiousoddman.receipt.parsing.cache.FileCache;
 import com.sun.jna.Pointer;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.ITessAPI;
 import net.sourceforge.tess4j.TessAPI;
@@ -38,18 +39,9 @@ public class MyTesseract extends Tesseract {
 
     public MyTessResult doMyOCR(File inputFile) throws TesseractException {
         try {
-            File imageFile = fileCache.getOrCreateFile(inputFile.getName() + ".tiff", () -> {
-                try {
-                    return ImageIOHelper.getImageFile(inputFile);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            File imageFile = fileCache.getOrCreateFile(inputFile.getName() + ".tiff", () -> getImageFile(inputFile));
             String imageFileFormat = ImageIOHelper.getImageFileFormat(imageFile);
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
-            if (!readers.hasNext()) {
-                throw new RuntimeException(ImageIOHelper.JAI_IMAGE_READER_MESSAGE);
-            }
             ImageReader reader = readers.next();
             StringBuilder plainTextResult = new StringBuilder();
             StringBuilder tsvTextResult = new StringBuilder();
@@ -69,19 +61,13 @@ public class MyTesseract extends Tesseract {
 
             } finally {
                 // delete temporary TIFF image for PDF
-                if (imageFile != null
-                        && imageFile.exists()
-                        && imageFile != inputFile
-                        && imageFile.getName().startsWith("multipage")
-                        && imageFile.getName().endsWith(ImageIOHelper.TIFF_EXT)) {
-                    imageFile.delete();
-                }
+                deleteTmpFile(inputFile, imageFile);
                 reader.dispose();
                 dispose();
             }
 
             return new MyTessResult(
-                    imageFile,
+                    inputFile,
                     plainTextResult.toString(),
                     tsvTextResult.toString()
             );
@@ -91,36 +77,25 @@ public class MyTesseract extends Tesseract {
         }
     }
 
+    @SneakyThrows
+    private static File getImageFile(File inputFile) {
+        return ImageIOHelper.getImageFile(inputFile);
+    }
+
     @Override
     public String doOCR(File inputFile, Rectangle rect) throws TesseractException {
         try {
-            File imageFile = fileCache.getOrCreateFile(inputFile.getName() + ".tiff", () -> {
-                try {
-                    return ImageIOHelper.getImageFile(inputFile);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            String fileName = inputFile.getName();
+            if (!fileName.endsWith(".tiff")) {
+                fileName += ".tiff";
+            }
+            File imageFile = fileCache.getOrCreateFile(fileName, () -> getImageFile(inputFile));
             int x = rect.x;
             int y = rect.y;
             int width = rect.width;
             int height = rect.height;
             String rectangledFileName = inputFile + String.format("_%d_%d_%d_%d.tiff", x, y, width, height);
-            fileCache.getOrCreateFile(rectangledFileName, () -> {
-                try {
-                    Path targetFileWithRect = Path.of(rectangledFileName);
-                    Files.copy(inputFile.toPath(), targetFileWithRect);
-                    BufferedImage img = ImageIO.read(targetFileWithRect.toFile());
-                    Graphics2D g2d = img.createGraphics();
-                    g2d.setColor(Color.RED);
-                    g2d.drawRect(x, y, width, height);
-                    g2d.dispose();
-                    ImageIO.write(img, "tiff", targetFileWithRect.toFile());
-                    return targetFileWithRect.toFile();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            fileCache.getOrCreateFile(rectangledFileName, () -> getFileWithRectangle(inputFile, rectangledFileName, x, y, width, height));
 
             String imageFileFormat = ImageIOHelper.getImageFileFormat(imageFile);
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
@@ -138,14 +113,7 @@ public class MyTesseract extends Tesseract {
                     result.append(doOCR(oimage, inputFile.getPath(), i + 1, false, rect));
                 }
             } finally {
-                // delete temporary TIFF image for PDF
-                if (imageFile != null
-                        && imageFile.exists()
-                        && imageFile != inputFile
-                        && imageFile.getName().startsWith("multipage")
-                        && imageFile.getName().endsWith(ImageIOHelper.TIFF_EXT)) {
-                    imageFile.delete();
-                }
+                deleteTmpFile(inputFile, imageFile);
                 reader.dispose();
                 dispose();
             }
@@ -155,6 +123,29 @@ public class MyTesseract extends Tesseract {
             log.error(e.getMessage(), e);
             throw new TesseractException(e);
         }
+    }
+
+    private static void deleteTmpFile(File inputFile, File imageFile) {
+        if (imageFile != null
+                && imageFile.exists()
+                && imageFile != inputFile
+                && imageFile.getName().startsWith("multipage")
+                && imageFile.getName().endsWith(ImageIOHelper.TIFF_EXT)) {
+            imageFile.delete();
+        }
+    }
+
+    @SneakyThrows
+    private static File getFileWithRectangle(File inputFile, String rectangledFileName, int x, int y, int width, int height) {
+        Path targetFileWithRect = Path.of(rectangledFileName);
+        Files.copy(inputFile.toPath(), targetFileWithRect);
+        BufferedImage img = ImageIO.read(targetFileWithRect.toFile());
+        Graphics2D g2d = img.createGraphics();
+        g2d.setColor(Color.RED);
+        g2d.drawRect(x, y, width, height);
+        g2d.dispose();
+        ImageIO.write(img, "tiff", targetFileWithRect.toFile());
+        return targetFileWithRect.toFile();
     }
 
 

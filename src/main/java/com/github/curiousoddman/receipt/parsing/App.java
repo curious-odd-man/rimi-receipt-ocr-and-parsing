@@ -55,8 +55,8 @@ public class App implements ApplicationRunner {
                 if (ignoreList.isIgnored(sourcePdfName)) {
                     continue;
                 }
-                MyTessResult imageAsText = fileCache.getOrCreate(sourcePdfName, () -> pdf2Text.convert(file));
-                Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, imageAsText);
+                MyTessResult myTessResult = fileCache.getOrCreate(sourcePdfName, () -> pdf2Text.convert(file));
+                Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, myTessResult);
                 if (optionalReceipt.isPresent()) {
                     Receipt receipt = optionalReceipt.get();
                     String receiptJson = OBJECT_MAPPER
@@ -75,17 +75,17 @@ public class App implements ApplicationRunner {
 
 
     @SneakyThrows
-    private Optional<Receipt> parseWithAnyParser(String fileName, MyTessResult text) {
+    private Optional<Receipt> parseWithAnyParser(String fileName, MyTessResult myTessResult) {
         return text2ReceiptList
                 .stream()
-                .map(parser -> tryParseOrNull(fileName, text, parser))
+                .map(parser -> tryParseOrNull(fileName, myTessResult, parser))
                 .filter(Objects::nonNull)
                 .findFirst();
     }
 
-    private static Receipt tryParseOrNull(String fileName, MyTessResult text, Text2Receipt parser) {
+    private static Receipt tryParseOrNull(String fileName, MyTessResult myTessResult, Text2Receipt parser) {
         try {
-            return parser.parse(fileName, text);
+            return parser.parse(fileName, myTessResult);
         } catch (Exception e) {
             log.error("Failed to parse receipt with parser {}", parser.getClass(), e);
             return null;
