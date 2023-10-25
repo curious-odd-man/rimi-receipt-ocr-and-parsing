@@ -17,7 +17,7 @@ public class TotalDiscountAmountValidator implements ReceiptValidator {
             itemsTotalDiscounts = itemsTotalDiscounts.add(item.getDiscount().value());
         }
 
-        if (totalSavings.compareTo(itemsTotalDiscounts) == 0) {
+        if (totalSavings.compareTo(itemsTotalDiscounts.abs()) == 0) {
             return new ValidationResult(getClass());
         }
 

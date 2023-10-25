@@ -26,7 +26,7 @@ public class ItemNumbersValidator implements ReceiptValidator {
 
     public boolean isItemValid(ReceiptItem item) {
         BigDecimal fullPrice = item.getCount().value().multiply(item.getPricePerUnit().value());
-        BigDecimal discountedPrice = fullPrice.subtract(item.getDiscount().value()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal discountedPrice = fullPrice.add(item.getDiscount().value()).setScale(2, RoundingMode.HALF_UP);
         return discountedPrice.compareTo(item.getFinalCost().value()) == 0;
     }
 }
