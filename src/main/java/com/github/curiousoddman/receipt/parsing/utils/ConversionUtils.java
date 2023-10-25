@@ -1,7 +1,6 @@
 package com.github.curiousoddman.receipt.parsing.utils;
 
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
-import com.github.curiousoddman.receipt.parsing.tess.MyTessWord;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -23,7 +22,6 @@ public class ConversionUtils {
             throw new IllegalStateException("Error value '" + replaced + "'", e);
         }
     }
-
 
     /**
      * Converts ONE of texts into BigDecimal value.
@@ -80,25 +78,5 @@ public class ConversionUtils {
             }
         }
         return null;
-    }
-
-    public static List<MyTessWord> tsvToTessWords(String tsvText) {
-        return tsvText
-                .lines()
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
-                .map(line -> line.split("\t"))
-                .map(ConversionUtils::getMyTessWord)
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    private static MyTessWord getMyTessWord(String[] arr) {
-        if (arr.length < 12) {
-            return null;
-        }
-        return new MyTessWord(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]), Integer.parseInt(arr[2]), Integer.parseInt(arr[3]),
-                              Integer.parseInt(arr[4]), Integer.parseInt(arr[5]), Integer.parseInt(arr[6]), Integer.parseInt(arr[7]),
-                              Integer.parseInt(arr[8]), Integer.parseInt(arr[9]), Double.parseDouble(arr[10]), arr[11]);
     }
 }

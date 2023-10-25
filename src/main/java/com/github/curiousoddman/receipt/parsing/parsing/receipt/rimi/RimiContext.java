@@ -2,13 +2,13 @@ package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.Context;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessWord;
-import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import lombok.Data;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 @Data
@@ -23,7 +23,7 @@ public class RimiContext implements Context {
         rawReceiptText = text;
         this.tsvText = tsvText;
         rawReceiptLines = text.lines().toList();
-        tessWords = ConversionUtils.tsvToTessWords(tsvText);
+        tessWords = tsvToTessWords(tsvText);
         this.originalFile = originalFile;
     }
 
@@ -101,5 +101,25 @@ public class RimiContext implements Context {
                 .stream()
                 .filter(mtw -> mtw.text().equals(text))
                 .toList();
+    }
+
+    public static List<MyTessWord> tsvToTessWords(String tsvText) {
+        return tsvText
+                .lines()
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .map(line -> line.split("\t"))
+                .map(RimiContext::getMyTessWord)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private static MyTessWord getMyTessWord(String[] arr) {
+        if (arr.length < 12) {
+            return null;
+        }
+        return new MyTessWord(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]), Integer.parseInt(arr[2]), Integer.parseInt(arr[3]),
+                              Integer.parseInt(arr[4]), Integer.parseInt(arr[5]), Integer.parseInt(arr[6]), Integer.parseInt(arr[7]),
+                              Integer.parseInt(arr[8]), Integer.parseInt(arr[9]), Double.parseDouble(arr[10]), arr[11]);
     }
 }
