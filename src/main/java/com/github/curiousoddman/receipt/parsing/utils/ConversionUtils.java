@@ -1,6 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.utils;
 
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
+import com.github.curiousoddman.receipt.parsing.parsing.Patterns;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -11,15 +12,25 @@ import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
 public class ConversionUtils {
+
     public static MyBigDecimal getReceiptNumber(String text) {
-        String replaced = text
-                .trim()
-                .replace(',', '.')
-                .replace(" ", ""); // Values like '0. 50'
+        Matcher matcher = Patterns.NUMBER_PATTERN.matcher(text.replace("\r", "").replace("\n", ""));
+        if (!matcher.matches()) {
+            throw new IllegalStateException("Value '" + text + "' does not match number pattern");
+        }
+
+        int groupCount = matcher.groupCount();
+        String cleanedValue;
+        if (groupCount == 3 && matcher.group(3) != null && !matcher.group(3).isBlank()) {
+            cleanedValue = matcher.group(1) + '.' + matcher.group(3);
+        } else {
+            cleanedValue = matcher.group(1);
+        }
+
         try {
-            return new MyBigDecimal(new BigDecimal(replaced), text);
+            return new MyBigDecimal(new BigDecimal(cleanedValue), text);
         } catch (Exception e) {
-            throw new IllegalStateException("Error value '" + replaced + "'", e);
+            throw new IllegalStateException("Error value '" + cleanedValue + "'", e);
         }
     }
 

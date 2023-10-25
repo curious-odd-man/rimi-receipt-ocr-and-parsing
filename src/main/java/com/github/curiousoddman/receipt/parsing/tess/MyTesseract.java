@@ -88,12 +88,12 @@ public class MyTesseract extends Tesseract {
                 fileName += ".tiff";
             }
             File imageFile = fileCache.getOrCreateFile(fileName, () -> getImageFile(inputFile));
-            int x = rect.x;
-            int y = rect.y;
-            int width = rect.width;
-            int height = rect.height;
-            String rectangledFileName = inputFile + String.format("_%d_%d_%d_%d.tiff", x, y, width, height);
-            fileCache.getOrCreateFile(rectangledFileName, () -> getFileWithRectangle(inputFile, rectangledFileName, x, y, width, height));
+//            int x = rect.x;
+//            int y = rect.y;
+//            int width = rect.width;
+//            int height = rect.height;
+//            String rectangledFileName = inputFile + String.format("_%d_%d_%d_%d.tiff", x, y, width, height);
+//            fileCache.getOrCreateFile(rectangledFileName, () -> getFileWithRectangle(inputFile, rectangledFileName, x, y, width, height));
 
             String imageFileFormat = ImageIOHelper.getImageFileFormat(imageFile);
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);

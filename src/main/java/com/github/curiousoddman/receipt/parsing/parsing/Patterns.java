@@ -35,5 +35,12 @@ public class Patterns {
      */
     public static final Pattern RECEIPT_TIME_PATTERN = Pattern.compile("LAIKS\\s+(.*)");
 
-
+    /**
+     * 1,.23:A
+     * 1.23
+     * 4
+     * 0. 50
+     * -1,20
+     */
+    public static final Pattern NUMBER_PATTERN = Pattern.compile(".*?-*?(-?\\d+)([.,\\s]+(\\d+))?.*");
 }

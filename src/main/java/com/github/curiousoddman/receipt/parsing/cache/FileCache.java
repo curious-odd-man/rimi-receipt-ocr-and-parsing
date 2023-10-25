@@ -22,9 +22,10 @@ public class FileCache {
 
     @SneakyThrows
     public MyTessResult getOrCreate(String identifier, Supplier<MyTessResult> valueSupplier) {
-        Path textCacheFilePath = CACHE_ROOT.resolve(identifier + ".txt");
-        Path tsvCacheFilePath = CACHE_ROOT.resolve(identifier + ".tsv");
-        Path imageCacheFilePath = CACHE_ROOT.resolve(identifier + ".tiff");
+        Path newRoot = getSubdirectoryPath(identifier);
+        Path textCacheFilePath = newRoot.resolve(identifier + ".txt");
+        Path tsvCacheFilePath = newRoot.resolve(identifier + ".tsv");
+        Path imageCacheFilePath = newRoot.resolve(identifier + ".tiff");
         if (Files.exists(textCacheFilePath) && Files.exists(tsvCacheFilePath)) {
             return new MyTessResult(
                     imageCacheFilePath.toFile(),
@@ -39,10 +40,22 @@ public class FileCache {
         return tessResult;
     }
 
+    @SneakyThrows
+    private static Path getSubdirectoryPath(String identifier) {
+        int i = identifier.indexOf('.');
+        String dirName = identifier.substring(0, i);
+        Path newRoot = CACHE_ROOT.resolve(dirName);
+        if (!Files.exists(newRoot)) {
+            Files.createDirectories(newRoot);
+        }
+        return newRoot;
+    }
+
 
     @SneakyThrows
     public File getOrCreateFile(String identifier, Supplier<File> valueSupplier) {
-        Path cacheFilePath = CACHE_ROOT.resolve(identifier);
+        Path newRoot = getSubdirectoryPath(identifier);
+        Path cacheFilePath = newRoot.resolve(identifier);
         if (Files.exists(cacheFilePath)) {
             return cacheFilePath.toFile();
         }
@@ -54,7 +67,8 @@ public class FileCache {
 
     @SneakyThrows
     public void create(String identifier, String contents) {
-        Path cacheFilePath = CACHE_ROOT.resolve(identifier);
+        Path newRoot = getSubdirectoryPath(identifier);
+        Path cacheFilePath = newRoot.resolve(identifier);
         Files.writeString(cacheFilePath, contents);
     }
 }
