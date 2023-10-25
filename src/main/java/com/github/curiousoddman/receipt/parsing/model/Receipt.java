@@ -16,7 +16,7 @@ public class Receipt {
     private String       cashRegisterNumber;
     private MyBigDecimal totalSavings;
     private MyBigDecimal totalPayment;
-    private MyBigDecimal totalVat;
+//    private MyBigDecimal totalVat;
     private MyBigDecimal shopBrandMoneyAccumulated;
     private String       documentNumber;
     private LocalDateTime receiptDateTime;

@@ -76,24 +76,24 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         return ConversionUtils.getFirstGroup(context.getLineMatching(pattern, 0), pattern);
     }
 
-    @Override
-    protected MyBigDecimal getTotalVat(RimiContext context) {
-        String line = context.getNextLinesAfterMatching(LINE_BEFORE_VAT_AMOUNTS_LINE).get(0);
-        String word = line.split(" ")[5];
-        try {
-            return ConversionUtils.getReceiptNumber(word);
-        } catch (Exception e) {
-            log.info("Failed to parse vat - retrying... {}", e.getMessage());
-            MyTessWord myTessWord = context.getTessWord(word);
-            try {
-                String text = tesseract.doOCR(context.getOriginalFile(), myTessWord.getWordRect());
-                return ConversionUtils.getReceiptNumber(text);
-            } catch (Exception e1) {
-                log.error("", e1);
-                return RECEIPT_NUMBER_ZERO;
-            }
-        }
-    }
+//    @Override
+//    protected MyBigDecimal getTotalVat(RimiContext context) {
+//        String line = context.getNextLinesAfterMatching(LINE_BEFORE_VAT_AMOUNTS_LINE).get(0);
+//        String word = line.split(" ")[5];
+//        try {
+//            return ConversionUtils.getReceiptNumber(word);
+//        } catch (Exception e) {
+//            log.info("Failed to parse vat - retrying... {}", e.getMessage());
+//            MyTessWord myTessWord = context.getTessWord(word);
+//            try {
+//                String text = tesseract.doOCR(context.getOriginalFile(), myTessWord.getWordRect());
+//                return ConversionUtils.getReceiptNumber(text);
+//            } catch (Exception e1) {
+//                log.error("", e1);
+//                return RECEIPT_NUMBER_ZERO;
+//            }
+//        }
+//    }
 
     @Override
     protected MyBigDecimal getShopBrandMoneyAccumulated(RimiContext context) {
