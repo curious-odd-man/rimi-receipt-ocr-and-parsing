@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -24,7 +23,8 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.curiousoddman.receipt.parsing.parsing.Patterns.*;
+import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.parseDateTime;
+import static com.github.curiousoddman.receipt.parsing.utils.Patterns.*;
 
 @Slf4j
 @Component
@@ -116,10 +116,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     @Override
     protected LocalDateTime getReceiptDateTime(RimiContext context) {
         String time = getFirstGroup(context, RECEIPT_TIME_PATTERN);
-        return LocalDateTime.parse(
-                time,
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-        );
+        return parseDateTime(time);
     }
 
     @Override

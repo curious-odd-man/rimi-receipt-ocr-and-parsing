@@ -37,6 +37,8 @@ public class MyTesseract extends Tesseract {
 
     public MyTessResult doMyOCR(File inputFile) throws TesseractException {
         try {
+            setPageSegMode(1);
+            setOcrEngineMode(1);
             File imageFile = fileCache.getOrCreateFile(inputFile.getName() + ".tiff", () -> getImageFile(inputFile));
             String imageFileFormat = ImageIOHelper.getImageFileFormat(imageFile);
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
@@ -82,6 +84,8 @@ public class MyTesseract extends Tesseract {
 
     @Override
     public String doOCR(File inputFile, Rectangle rect) throws TesseractException {
+        setPageSegMode(ITessAPI.TessPageSegMode.PSM_SINGLE_BLOCK);
+        setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_DEFAULT);
         try {
             String fileName = inputFile.getName();
             if (!fileName.endsWith(".tiff")) {

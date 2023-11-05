@@ -1,13 +1,15 @@
 package com.github.curiousoddman.receipt.parsing.utils;
 
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
-import com.github.curiousoddman.receipt.parsing.parsing.Patterns;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.curiousoddman.receipt.parsing.utils.Patterns.NON_DIGITS;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
@@ -89,5 +91,12 @@ public class ConversionUtils {
             }
         }
         return null;
+    }
+
+    public static LocalDateTime parseDateTime(String text) {
+        return LocalDateTime.parse(
+                NON_DIGITS.matcher(text).replaceAll(""),
+                DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+        );
     }
 }

@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.parsing.parsing;
+package com.github.curiousoddman.receipt.parsing.utils;
 
 import java.util.regex.Pattern;
 
@@ -27,7 +27,7 @@ public class Patterns {
     Nodoklis Ar PWN Bez PVN PWN summa
     Nodoklis Ar PVN Bez PVN PVN summa
      */
-    public static final Pattern LINE_BEFORE_VAT_AMOUNTS_LINE = Pattern.compile(".*Nodoklis\\s+Ar\\s+...\\s+Bez\\s+...\\s+...\\s+summa.*");
+    //public static final Pattern LINE_BEFORE_VAT_AMOUNTS_LINE = Pattern.compile(".*Nodoklis\\s+Ar\\s+...\\s+Bez\\s+...\\s+...\\s+summa.*");
 
 
     /*
@@ -43,4 +43,6 @@ public class Patterns {
      * -1,20
      */
     public static final Pattern NUMBER_PATTERN = Pattern.compile(".*?-*?(-?\\d+)([.,\\s]+(\\d+))?.*");
+
+    public static final Pattern NON_DIGITS = Pattern.compile("\\D+");
 }
