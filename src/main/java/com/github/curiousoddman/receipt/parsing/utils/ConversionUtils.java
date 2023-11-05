@@ -16,7 +16,8 @@ import static java.util.stream.Collectors.groupingBy;
 public class ConversionUtils {
 
     public static MyBigDecimal getReceiptNumber(String text) {
-        Matcher matcher = Patterns.NUMBER_PATTERN.matcher(text.replace("\r", "").replace("\n", ""));
+        String cleanedInputText = text.replace("\r", "").replace("\n", "");
+        Matcher matcher = Patterns.NUMBER_PATTERN.matcher(cleanedInputText);
         if (!matcher.matches()) {
             throw new IllegalStateException("Value '" + text + "' does not match number pattern");
         }
