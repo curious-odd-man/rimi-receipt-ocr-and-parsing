@@ -94,9 +94,10 @@ public class ConversionUtils {
     }
 
     public static LocalDateTime parseDateTime(String text) {
+        String yyyyMMddHHmmss = "yyyyMMddHHmmss";
         return LocalDateTime.parse(
-                NON_DIGITS.matcher(text).replaceAll(""),
-                DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+                NON_DIGITS.matcher(text).replaceAll("").substring(0, yyyyMMddHHmmss.length()),
+                DateTimeFormatter.ofPattern(yyyyMMddHHmmss)
         );
     }
 }

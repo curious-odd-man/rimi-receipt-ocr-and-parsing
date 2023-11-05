@@ -7,6 +7,7 @@ import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessWord;
 import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
 import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
+import com.github.curiousoddman.receipt.parsing.utils.Utils;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -14,10 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
 
+import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
@@ -170,7 +171,9 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
             // If line looks like this: 2 gab X 2,99 EUR 5,98 A -> then group 7 is 5,98 A
             int indexOfSpace = finalCostGroupValue.indexOf(' ');
             if (indexOfSpace >= 0) {
-                finalCost = getReceiptNumber(context, finalCostGroupValue.substring(0, indexOfSpace));
+                String beforeSpace = finalCostGroupValue.substring(0, indexOfSpace);
+                String afterSpace = finalCostGroupValue.substring(indexOfSpace + 1);
+                finalCost = getReceiptNumber(context, beforeSpace, afterSpace);
             } else {
                 finalCost = getReceiptNumber(context, finalCostGroupValue);
             }
@@ -201,11 +204,50 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
             List<MyTessWord> tessWords = context.getTessWords(value);
             if (tessWords.size() == 1) {
                 MyTessWord myTessWord = tessWords.get(0);
-                return ConversionUtils.getReceiptNumber(tesseract.doOCR(context.getOriginalFile(), myTessWord.getWordRect()));
+                String reOcredText = tesseract.doOCR(context.getOriginalFile(), myTessWord.getWordRect());
+                return ConversionUtils.getReceiptNumber(reOcredText);
             } else {
                 log.error("Cannot find tess word: {}", tessWords);
             }
             throw e;
+        }
+    }
+
+    @SneakyThrows
+    private MyBigDecimal getReceiptNumber(RimiContext context, String value, String anotherPart) {
+        try {
+            return ConversionUtils.getReceiptNumber(value);
+        } catch (Exception e) {
+            List<MyTessWord> tessWords = context.getTessWords(value);
+            List<MyTessWord> anotherTessWords = context.getTessWords(anotherPart);
+
+            Map<MyTessWord, MyTessWord> wordsThatFollow = new HashMap<>();
+
+            for (MyTessWord tessWord : tessWords) {
+                findFollowingWord(tessWord, anotherTessWords, wordsThatFollow);
+            }
+
+            if (wordsThatFollow.size() == 1) {
+                Iterator<Map.Entry<MyTessWord, MyTessWord>> iterator = wordsThatFollow.entrySet().iterator();
+                Map.Entry<MyTessWord, MyTessWord> theOnlyValue = iterator.next();
+                MyTessWord firstWord = theOnlyValue.getKey();
+                MyTessWord secondWord = theOnlyValue.getValue();
+                Rectangle bothWordsRectangle = Utils.uniteRectangles(firstWord.getWordRect(), secondWord.getWordRect());
+                String reOcredText = tesseract.doOCR(context.getOriginalFile(), bothWordsRectangle);
+                return ConversionUtils.getReceiptNumber(reOcredText);
+            } else {
+                log.error("Cannot find tess following words: {}", wordsThatFollow);
+            }
+            throw e;
+        }
+    }
+
+    private static void findFollowingWord(MyTessWord tessWord, List<MyTessWord> anotherTessWords, Map<MyTessWord, MyTessWord> wordsThatFollow) {
+        for (MyTessWord anotherTessWord : anotherTessWords) {
+            if (tessWord.isFollowedBy(anotherTessWord)) {
+                wordsThatFollow.put(tessWord, anotherTessWord);
+                return;
+            }
         }
     }
 
