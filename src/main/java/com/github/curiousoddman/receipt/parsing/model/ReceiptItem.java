@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 @Data
 public class ReceiptItem {
     private String       description;
-    private String       category;
     private MyBigDecimal count;
     private MyBigDecimal pricePerUnit;
     private String       units;
