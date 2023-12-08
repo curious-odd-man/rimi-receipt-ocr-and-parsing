@@ -199,9 +199,16 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 }
                 return ConversionUtils.getReceiptNumber(reOcredText);
             } else {
-                log.error("Cannot find tess word: {}", tessWords);
+                printUnableToFindTessWordsError(tessWords);
             }
             return new MyBigDecimal(null, null, e.getMessage());
+        }
+    }
+
+    private static void printUnableToFindTessWordsError(List<MyTessWord> tessWords) {
+        log.error("Cannot find tess word: {}", tessWords.size());
+        for (MyTessWord tessWord : tessWords) {
+            log.error("\t{}", tessWord);
         }
     }
 
@@ -276,7 +283,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                     return itemCopy;
                 }
             } else {
-                log.error("Cannot find tess word: {}", tessWords);
+                printUnableToFindTessWordsError(tessWords);
             }
         }
 
