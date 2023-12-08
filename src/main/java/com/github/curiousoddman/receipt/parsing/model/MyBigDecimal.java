@@ -13,6 +13,8 @@ public record MyBigDecimal(BigDecimal value,
 
     @JsonValue
     public Object jsonValue() {
-        return isError() ? errorText : value;
+        return isError()
+               ? ("ERROR: " + errorText)
+               : value;
     }
 }
