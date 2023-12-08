@@ -137,20 +137,6 @@ public class MyTesseract extends Tesseract {
         }
     }
 
-    @SneakyThrows
-    private static File getFileWithRectangle(File inputFile, String rectangledFileName, int x, int y, int width, int height) {
-        Path targetFileWithRect = Path.of(rectangledFileName);
-        Files.copy(inputFile.toPath(), targetFileWithRect);
-        BufferedImage img = ImageIO.read(targetFileWithRect.toFile());
-        Graphics2D g2d = img.createGraphics();
-        g2d.setColor(Color.RED);
-        g2d.drawRect(x, y, width, height);
-        g2d.dispose();
-        ImageIO.write(img, "tiff", targetFileWithRect.toFile());
-        return targetFileWithRect.toFile();
-    }
-
-
     private String doOCR(IIOImage oimage,
                          String filename,
                          int pageNum,

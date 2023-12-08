@@ -10,16 +10,16 @@ import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import com.github.curiousoddman.receipt.parsing.utils.Utils;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import net.sourceforge.tess4j.TesseractException;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
 
 import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,7 +31,7 @@ import static com.github.curiousoddman.receipt.parsing.utils.Patterns.*;
 @Component
 @RequiredArgsConstructor
 public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
-    public static final MyBigDecimal         RECEIPT_NUMBER_ZERO = new MyBigDecimal(BigDecimal.ZERO, null);
+    public static final MyBigDecimal         RECEIPT_NUMBER_ZERO = new MyBigDecimal(BigDecimal.ZERO, null, null);
     private final       MyTesseract          tesseract;
     private final       ItemNumbersValidator itemNumbersValidator;
 
@@ -196,7 +196,6 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         return item;
     }
 
-    @SneakyThrows
     private MyBigDecimal getReceiptNumber(RimiContext context, String value) {
         try {
             return ConversionUtils.getReceiptNumber(value);
@@ -204,16 +203,20 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
             List<MyTessWord> tessWords = context.getTessWords(value);
             if (tessWords.size() == 1) {
                 MyTessWord myTessWord = tessWords.get(0);
-                String reOcredText = tesseract.doOCR(context.getOriginalFile(), myTessWord.getWordRect());
+                String reOcredText = null;
+                try {
+                    reOcredText = tesseract.doOCR(context.getOriginalFile(), myTessWord.getWordRect());
+                } catch (TesseractException ex) {
+                    return new MyBigDecimal(null, null, ex.getMessage());
+                }
                 return ConversionUtils.getReceiptNumber(reOcredText);
             } else {
                 log.error("Cannot find tess word: {}", tessWords);
             }
-            throw e;
+            return new MyBigDecimal(null, null, e.getMessage());
         }
     }
 
-    @SneakyThrows
     private MyBigDecimal getReceiptNumber(RimiContext context, String value, String anotherPart) {
         try {
             return ConversionUtils.getReceiptNumber(value);
@@ -233,12 +236,17 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 MyTessWord firstWord = theOnlyValue.getKey();
                 MyTessWord secondWord = theOnlyValue.getValue();
                 Rectangle bothWordsRectangle = Utils.uniteRectangles(firstWord.getWordRect(), secondWord.getWordRect());
-                String reOcredText = tesseract.doOCR(context.getOriginalFile(), bothWordsRectangle);
+                String reOcredText = null;
+                try {
+                    reOcredText = tesseract.doOCR(context.getOriginalFile(), bothWordsRectangle);
+                } catch (TesseractException ex) {
+                    return new MyBigDecimal(null, null, ex.getMessage());
+                }
                 return ConversionUtils.getReceiptNumber(reOcredText);
             } else {
                 log.error("Cannot find tess following words: {}", wordsThatFollow);
             }
-            throw e;
+            return new MyBigDecimal(null, null, e.getMessage());
         }
     }
 
@@ -251,7 +259,6 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         }
     }
 
-    @SneakyThrows
     private ReceiptItem tryOcrNumbersAgain(RimiContext context, ReceiptItem item) {
         List<ReceiptNumberWithSetter> allNumbers = List.of(
                 new ReceiptNumberWithSetter(item.getDiscount(), ReceiptItem::setDiscount),
@@ -268,7 +275,13 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
             List<MyTessWord> tessWords = context.getTessWords(rn.text());
             if (tessWords.size() == 1) {
                 MyTessWord myTessWord = tessWords.get(0);
-                String newValue = tesseract.doOCR(context.getOriginalFile(), myTessWord.getWordRect());
+                String newValue = null;
+                try {
+                    newValue = tesseract.doOCR(context.getOriginalFile(), myTessWord.getWordRect());
+                } catch (TesseractException e) {
+                    item.setErrorMessage(e.getMessage());
+                    return item;
+                }
                 ReceiptItem itemCopy = item.toBuilder().build();
                 setter.accept(itemCopy, getReceiptNumber(context, newValue));
                 if (itemNumbersValidator.isItemValid(itemCopy)) {

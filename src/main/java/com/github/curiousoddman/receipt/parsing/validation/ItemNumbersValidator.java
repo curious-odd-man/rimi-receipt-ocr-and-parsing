@@ -1,5 +1,6 @@
 package com.github.curiousoddman.receipt.parsing.validation;
 
+import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import org.springframework.stereotype.Component;
@@ -25,8 +26,16 @@ public class ItemNumbersValidator implements ReceiptValidator {
     }
 
     public boolean isItemValid(ReceiptItem item) {
-        BigDecimal fullPrice = item.getCount().value().multiply(item.getPricePerUnit().value());
-        BigDecimal discountedPrice = fullPrice.add(item.getDiscount().value()).setScale(2, RoundingMode.HALF_UP);
-        return discountedPrice.compareTo(item.getFinalCost().value()) == 0;
+        MyBigDecimal pricePerUnit = item.getPricePerUnit();
+        MyBigDecimal count = item.getCount();
+        MyBigDecimal discount = item.getDiscount();
+        MyBigDecimal finalCost = item.getFinalCost();
+        if (pricePerUnit.isError() || count.isError() || discount.isError() || finalCost.isError()) {
+            return false;
+        }
+
+        BigDecimal fullPrice = count.value().multiply(pricePerUnit.value());
+        BigDecimal discountedPrice = fullPrice.add(discount.value()).setScale(2, RoundingMode.HALF_UP);
+        return discountedPrice.compareTo(finalCost.value()) == 0;
     }
 }

@@ -13,7 +13,6 @@ import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationExecutor;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationStatsCollector;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.boot.ApplicationArguments;
@@ -74,7 +73,6 @@ public class App implements ApplicationRunner {
     }
 
 
-    @SneakyThrows
     private Optional<Receipt> parseWithAnyParser(String fileName, MyTessResult myTessResult) {
         return text2ReceiptList
                 .stream()

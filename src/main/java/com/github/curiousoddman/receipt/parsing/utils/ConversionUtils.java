@@ -31,7 +31,7 @@ public class ConversionUtils {
         }
 
         try {
-            return new MyBigDecimal(new BigDecimal(cleanedValue), text);
+            return new MyBigDecimal(new BigDecimal(cleanedValue), text, null);
         } catch (Exception e) {
             throw new IllegalStateException("Error value '" + cleanedValue + "'", e);
         }
