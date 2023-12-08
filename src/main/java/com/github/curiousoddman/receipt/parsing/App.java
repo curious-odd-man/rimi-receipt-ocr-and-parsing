@@ -59,7 +59,8 @@ public class App implements ApplicationRunner {
                     continue;
                 }
                 MyTessResult myTessResult = fileCache.getOrCreate(sourcePdfName, () -> pdf2Text.convert(file));
-                TsvDocument tsvDocument = tsv2Struct.parseTsv(myTessResult.tsvText());
+                TsvDocument tsvDocument = tsv2Struct.parseTsv(myTessResult.getTsvText());
+                myTessResult.setTsvDocument(tsvDocument);
                 fileCache.create(sourcePdfName + ".tsv.json", OBJECT_MAPPER.writeValueAsString(tsvDocument));
                 Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, myTessResult);
                 if (optionalReceipt.isPresent()) {

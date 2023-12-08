@@ -35,8 +35,8 @@ public class FileCache {
         }
 
         MyTessResult tessResult = valueSupplier.get();
-        Files.writeString(textCacheFilePath, tessResult.plainText());
-        Files.writeString(tsvCacheFilePath, tessResult.tsvText());
+        Files.writeString(textCacheFilePath, tessResult.getPlainText());
+        Files.writeString(tsvCacheFilePath, tessResult.getTsvText());
         return tessResult;
     }
 

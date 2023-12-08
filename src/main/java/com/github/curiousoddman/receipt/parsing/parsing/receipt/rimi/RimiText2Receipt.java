@@ -3,8 +3,8 @@ package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.BasicText2Receipt;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
-import com.github.curiousoddman.receipt.parsing.tess.MyTessWord;
 import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
 import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import com.github.curiousoddman.receipt.parsing.utils.Utils;
@@ -38,7 +38,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected RimiContext getContext(MyTessResult tessResult) {
-        return new RimiContext(tessResult.inputFile(), tessResult.plainText(), tessResult.tsvText());
+        return new RimiContext(tessResult.getInputFile(), tessResult.getPlainText(), tessResult.getTsvDocument());
     }
 
     @Override
@@ -188,12 +188,12 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         try {
             return ConversionUtils.getReceiptNumber(value);
         } catch (Exception e) {
-            List<MyTessWord> tessWords = context.getTessWords(value);
+            List<TsvWord> tessWords = context.getTessWords(value);
             if (tessWords.size() == 1) {
-                MyTessWord myTessWord = tessWords.get(0);
+                TsvWord tsvWord = tessWords.get(0);
                 String reOcredText = null;
                 try {
-                    reOcredText = tesseract.doOCR(context.getOriginalFile(), myTessWord.getWordRect());
+                    reOcredText = tesseract.doOCR(context.getOriginalFile(), tsvWord.getWordRect());
                 } catch (TesseractException ex) {
                     return new MyBigDecimal(null, null, ex.getMessage());
                 }
@@ -205,9 +205,9 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         }
     }
 
-    private static void printUnableToFindTessWordsError(List<MyTessWord> tessWords) {
+    private static void printUnableToFindTessWordsError(List<TsvWord> tessWords) {
         log.error("Cannot find tess word: {}", tessWords.size());
-        for (MyTessWord tessWord : tessWords) {
+        for (TsvWord tessWord : tessWords) {
             log.error("\t{}", tessWord);
         }
     }
@@ -216,20 +216,20 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         try {
             return ConversionUtils.getReceiptNumber(value);
         } catch (Exception e) {
-            List<MyTessWord> tessWords = context.getTessWords(value);
-            List<MyTessWord> anotherTessWords = context.getTessWords(anotherPart);
+            List<TsvWord> tessWords = context.getTessWords(value);
+            List<TsvWord> anotherTessWords = context.getTessWords(anotherPart);
 
-            Map<MyTessWord, MyTessWord> wordsThatFollow = new HashMap<>();
+            Map<TsvWord, TsvWord> wordsThatFollow = new HashMap<>();
 
-            for (MyTessWord tessWord : tessWords) {
+            for (TsvWord tessWord : tessWords) {
                 findFollowingWord(tessWord, anotherTessWords, wordsThatFollow);
             }
 
             if (wordsThatFollow.size() == 1) {
-                Iterator<Map.Entry<MyTessWord, MyTessWord>> iterator = wordsThatFollow.entrySet().iterator();
-                Map.Entry<MyTessWord, MyTessWord> theOnlyValue = iterator.next();
-                MyTessWord firstWord = theOnlyValue.getKey();
-                MyTessWord secondWord = theOnlyValue.getValue();
+                Iterator<Map.Entry<TsvWord, TsvWord>> iterator = wordsThatFollow.entrySet().iterator();
+                Map.Entry<TsvWord, TsvWord> theOnlyValue = iterator.next();
+                TsvWord firstWord = theOnlyValue.getKey();
+                TsvWord secondWord = theOnlyValue.getValue();
                 Rectangle bothWordsRectangle = Utils.uniteRectangles(firstWord.getWordRect(), secondWord.getWordRect());
                 String reOcredText = null;
                 try {
@@ -245,8 +245,8 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         }
     }
 
-    private static void findFollowingWord(MyTessWord tessWord, List<MyTessWord> anotherTessWords, Map<MyTessWord, MyTessWord> wordsThatFollow) {
-        for (MyTessWord anotherTessWord : anotherTessWords) {
+    private static void findFollowingWord(TsvWord tessWord, List<TsvWord> anotherTessWords, Map<TsvWord, TsvWord> wordsThatFollow) {
+        for (TsvWord anotherTessWord : anotherTessWords) {
             if (tessWord.isFollowedBy(anotherTessWord)) {
                 wordsThatFollow.put(tessWord, anotherTessWord);
                 return;
@@ -267,12 +267,12 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 continue;
             }
             BiConsumer<ReceiptItem, MyBigDecimal> setter = rnWithSetter.setter();
-            List<MyTessWord> tessWords = context.getTessWords(rn.text());
+            List<TsvWord> tessWords = context.getTessWords(rn.text());
             if (tessWords.size() == 1) {
-                MyTessWord myTessWord = tessWords.get(0);
+                TsvWord tsvWord = tessWords.get(0);
                 String newValue = null;
                 try {
-                    newValue = tesseract.doOCR(context.getOriginalFile(), myTessWord.getWordRect());
+                    newValue = tesseract.doOCR(context.getOriginalFile(), tsvWord.getWordRect());
                 } catch (TesseractException e) {
                     item.setErrorMessage(e.getMessage());
                     return item;

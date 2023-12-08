@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
@@ -13,5 +14,9 @@ public class TsvLine {
 
     public int lineNum() {
         return row.lineNum();
+    }
+
+    public String getText() {
+        return words.stream().map(TsvWord::getText).collect(Collectors.joining(" "));
     }
 }
