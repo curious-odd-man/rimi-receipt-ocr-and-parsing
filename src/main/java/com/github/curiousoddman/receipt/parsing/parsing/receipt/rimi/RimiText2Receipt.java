@@ -31,9 +31,10 @@ import static com.github.curiousoddman.receipt.parsing.utils.Patterns.*;
 @Component
 @RequiredArgsConstructor
 public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
-    public static final MyBigDecimal         RECEIPT_NUMBER_ZERO = new MyBigDecimal(BigDecimal.ZERO, null, null);
-    private final       MyTesseract          tesseract;
-    private final       ItemNumbersValidator itemNumbersValidator;
+    public static final MyBigDecimal RECEIPT_NUMBER_ZERO = new MyBigDecimal(BigDecimal.ZERO, null, null);
+
+    private final MyTesseract          tesseract;
+    private final ItemNumbersValidator itemNumbersValidator;
 
     @Override
     protected RimiContext getContext(MyTessResult tessResult) {
@@ -57,12 +58,12 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected MyBigDecimal getTotalSavings(RimiContext context) {
-        String totalSavings = getFirstGroup(context, SAVINGS_AMOUNT);
-        if (totalSavings != null) {
-            return getReceiptNumber(context, totalSavings);
-        } else {
+        String savingsAmount = getFirstGroup(context, SAVINGS_AMOUNT_SEARCH);
+        if (savingsAmount == null) {
             return RECEIPT_NUMBER_ZERO;
         }
+
+        return getReceiptNumber(context, savingsAmount);
     }
 
     @Override
@@ -79,13 +80,19 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected MyBigDecimal getShopBrandMoneyAccumulated(RimiContext context) {
-        String text = "Nopelnītā Mans Rimi nauda";
-        String line = context.getLineContaining(text, 0);
-        if (line != null) {
-            return ConversionUtils.getBigDecimalAfterToken(line, text);
-        } else {
-            return RECEIPT_NUMBER_ZERO;
+        List<String> linesToMatch = List.of(
+                "Nopelnītā Mans Rimi nauda",
+                "Mans Rimi naudas uzkrājums"
+        );
+
+        for (String text : linesToMatch) {
+            String line = context.getLineContaining(text, 0);
+            if (line != null) {
+                return ConversionUtils.getBigDecimalAfterToken(line, text);
+            }
         }
+
+        return new MyBigDecimal(null, null, "Unable to find shop brand money accumulated on receipt");
     }
 
     @Override
