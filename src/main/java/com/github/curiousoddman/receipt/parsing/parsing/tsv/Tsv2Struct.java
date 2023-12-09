@@ -1,6 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.parsing.tsv;
 
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.*;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.raw.TsvRow;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +14,8 @@ public class Tsv2Struct {
 
     @SneakyThrows
     public TsvDocument parseTsv(String tsvContents) {
+        TsvDocument document = new TsvDocument(new ArrayList<>());
+
         List<String> lines = tsvContents.lines().toList();
 
         List<TsvRow> tsvRows = lines
@@ -20,63 +23,81 @@ public class Tsv2Struct {
                 .map(Tsv2Struct::lineToTsvRow)
                 .toList();
 
-        Map<TsvContainerKey, List<TsvRow>> collectedByKey = tsvRows
+        Map<Integer, List<TsvRow>> rowsPerPage = tsvRows
                 .stream()
-                .collect(Collectors.groupingBy(TsvRow::getContainerKey));
+                .collect(Collectors.groupingBy(TsvRow::pageNum));
 
-        List<TsvContainer> tsvContainers = collectedByKey
-                .entrySet()
-                .stream()
-                .map(this::transformToContainer)
-                .toList();
+        for (List<TsvRow> pageRows : rowsPerPage.values()) {
+            pageRows = new ArrayList<>(pageRows);
+            TsvRow pageIdRow = findOnlyOneAndRemove(1, pageRows);
+            TsvPage newPage = new TsvPage(document,
+                                          pageIdRow.pageNum(),
+                                          pageIdRow.left(),
+                                          pageIdRow.top(),
+                                          pageIdRow.width(),
+                                          pageIdRow.height(),
+                                          new ArrayList<>());
+            document.getPages().add(newPage);
 
-        return new TsvDocument(tsvContainers);
-    }
+            for (List<TsvRow> blockRows : pageRows.stream().collect(Collectors.groupingBy(TsvRow::blockNum)).values()) {
+                blockRows = new ArrayList<>(blockRows);
+                TsvRow blockIdRow = findOnlyOneAndRemove(2, blockRows);
+                TsvBlock newBlock = new TsvBlock(
+                        newPage,
+                        blockIdRow.blockNum(),
+                        blockIdRow.left(),
+                        blockIdRow.top(),
+                        blockIdRow.width(),
+                        blockIdRow.height(),
+                        new ArrayList<>()
+                );
+                newPage.getBlocks().add(newBlock);
 
-    private TsvContainer transformToContainer(Map.Entry<TsvContainerKey, List<TsvRow>> entry) {
-        TsvContainerKey key = entry.getKey();
-        List<TsvRow> rows = entry.getValue();
+                for (List<TsvRow> paragraphRows : blockRows.stream().collect(Collectors.groupingBy(TsvRow::paragraphNum)).values()) {
+                    paragraphRows = new ArrayList<>(paragraphRows);
+                    TsvRow paragraphIdRow = findOnlyOneAndRemove(3, paragraphRows);
+                    TsvParagraph newParagraph = new TsvParagraph(
+                            newBlock,
+                            paragraphIdRow.paragraphNum(),
+                            paragraphIdRow.left(),
+                            paragraphIdRow.top(),
+                            paragraphIdRow.width(),
+                            paragraphIdRow.height(),
+                            new ArrayList<>()
+                    );
+                    newBlock.getParagraphs().add(newParagraph);
 
-        TsvRow pageRow = findOnlyOneAndRemove(1, rows);
-        TsvRow blockRow = findOnlyOneAndRemove(2, rows);
-        TsvRow paragraphRow = findOnlyOneAndRemove(3, rows);
+                    for (List<TsvRow> lineRows : paragraphRows.stream().collect(Collectors.groupingBy(TsvRow::lineNum)).values()) {
+                        lineRows = new ArrayList<>(lineRows);
+                        TsvRow lineIdRow = findOnlyOneAndRemove(4, lineRows);
+                        TsvLine newLine = new TsvLine(
+                                newParagraph,
+                                lineIdRow.lineNum(),
+                                lineIdRow.left(),
+                                lineIdRow.top(),
+                                lineIdRow.width(),
+                                lineIdRow.height(),
+                                new ArrayList<>()
+                        );
 
-        List<TsvLine> lines = rowsToLines(rows);
-
-        return new TsvContainer(
-                key,
-                pageRow,
-                blockRow,
-                paragraphRow,
-                lines
-        );
-    }
-
-    private static List<TsvLine> rowsToLines(List<TsvRow> rows) {
-        List<TsvLine> lines = new ArrayList<>();
-        Map<Integer, List<TsvRow>> rowsByLine = rows
-                .stream()
-                .collect(Collectors.groupingBy(TsvRow::lineNum));
-
-        for (Map.Entry<Integer, List<TsvRow>> rowNumToLines : rowsByLine.entrySet()) {
-            Integer rowIndex = rowNumToLines.getKey();
-            List<TsvRow> tsvRows = rowNumToLines.getValue();
-            TsvRow lineTsvRow = findOnlyOneAndRemove(4, tsvRows);
-
-            List<TsvWord> words = tsvRows
-                    .stream()
-                    .map(TsvWord::new)
-                    .sorted(Comparator.comparingInt(TsvWord::getWordNumber))
-                    .toList();
-
-            lines.add(new TsvLine(
-                    lineTsvRow,
-                    words
-            ));
+                        lineRows
+                                .stream()
+                                .map(lineRow -> new TsvWord(newLine,
+                                                            lineRow.wordNum(),
+                                                            lineRow.left(),
+                                                            lineRow.top(),
+                                                            lineRow.width(),
+                                                            lineRow.height(),
+                                                            lineRow.confidence(),
+                                                            lineRow.text())).
+                                forEach(newLine.getWords()::add);
+                        newParagraph.getLines().add(newLine);
+                    }
+                }
+            }
         }
 
-        lines.sort(Comparator.comparingInt(TsvLine::lineNum));
-        return lines;
+        return document;
     }
 
     private static TsvRow findOnlyOneAndRemove(int rowType, List<TsvRow> rows) {

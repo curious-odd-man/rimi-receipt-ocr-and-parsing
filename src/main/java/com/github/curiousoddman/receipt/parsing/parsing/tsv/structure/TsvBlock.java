@@ -8,11 +8,15 @@ import java.util.List;
 
 @Getter
 @RequiredArgsConstructor
-public class TsvContainer {
+public class TsvBlock {
     @JsonIgnore
-    private final TsvContainerKey tsvContainerKey;
-    private final TsvRow          pageRow;
-    private final TsvRow          blockRow;
-    private final TsvRow          paragraphRow;
-    private final List<TsvLine>   lines;
+    private final TsvPage parentPage;
+
+    private final int blockNum;
+    private final int x;
+    private final int y;
+    private final int width;
+    private final int height;
+
+    private final List<TsvParagraph> paragraphs;
 }

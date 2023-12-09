@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.parsing.parsing.tsv.structure;
+package com.github.curiousoddman.receipt.parsing.parsing.tsv.raw;
 
 
 import java.math.BigDecimal;
@@ -34,9 +34,4 @@ public record TsvRow(int level,
                      int height,
                      BigDecimal confidence,
                      String text) {
-    public TsvContainerKey getContainerKey() {
-        return new TsvContainerKey(
-                pageNum, blockNum, paragraphNum
-        );
-    }
 }
