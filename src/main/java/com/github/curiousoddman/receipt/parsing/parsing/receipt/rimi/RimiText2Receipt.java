@@ -38,7 +38,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected RimiContext getContext(MyTessResult tessResult) {
-        return new RimiContext(tessResult.getInputFile(), tessResult.getPlainText(), tessResult.getTsvDocument());
+        return new RimiContext(tessResult.getInputFile(), tessResult.getTsvDocument());
     }
 
     @Override
@@ -58,12 +58,9 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected MyBigDecimal getTotalSavings(RimiContext context) {
-        String savingsAmount = getFirstGroup(context, SAVINGS_AMOUNT_SEARCH);
-        if (savingsAmount == null) {
-            return RECEIPT_NUMBER_ZERO;
-        }
-
-        return getReceiptNumber(context, savingsAmount);
+        return getFirstGroup(context, SAVINGS_AMOUNT_SEARCH)
+                .map(s -> getReceiptNumber(context, s))
+                .orElse(RECEIPT_NUMBER_ZERO);
     }
 
     @Override
@@ -110,7 +107,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected LocalDateTime getReceiptDateTime(RimiContext context) {
-        String time = getFirstGroup(context, RECEIPT_TIME_PATTERN);
+        String time = getFirstGroup(context, RECEIPT_TIME_PATTERN).orElseThrow();
         return parseDateTime(time);
     }
 

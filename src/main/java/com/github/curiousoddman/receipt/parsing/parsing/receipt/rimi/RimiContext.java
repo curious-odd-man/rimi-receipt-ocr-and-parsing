@@ -14,11 +14,9 @@ import java.util.regex.Pattern;
 @Data
 public class RimiContext implements Context {
     private final File        originalFile;
-    private final String      rawReceiptText;
     private final TsvDocument tsvDocument;
 
-    public RimiContext(File originalFile, String text, TsvDocument tsvDocument) {
-        rawReceiptText = text;
+    public RimiContext(File originalFile, TsvDocument tsvDocument) {
         this.originalFile = originalFile;
         this.tsvDocument = tsvDocument;
     }
@@ -49,18 +47,6 @@ public class RimiContext implements Context {
         return tsvDocument.getLines().stream().filter(line -> pattern.matcher(line).matches()).toList();
     }
 
-    public List<String> getNextLinesAfterMatching(Pattern pattern) {
-        List<String> result = new ArrayList<>();
-        Iterator<String> iterator = tsvDocument.getLines().iterator();
-        while (iterator.hasNext()) {
-            String line = iterator.next();
-            if (pattern.matcher(line).matches() && iterator.hasNext()) {
-                result.add(iterator.next());
-            }
-        }
-        return result;
-    }
-
     public List<String> getLinesBetween(String beginning, String end) {
         List<String> result = new ArrayList<>();
         Iterator<String> iterator = tsvDocument.getLines().iterator();
@@ -77,20 +63,6 @@ public class RimiContext implements Context {
             }
         }
         return result;
-    }
-
-    @Override
-    public String getText() {
-        return rawReceiptText;
-    }
-
-    public TsvWord getTessWord(String text) {
-        return tsvDocument
-                .getWords()
-                .stream()
-                .filter(mtw -> mtw.getText().equals(text))
-                .findAny()
-                .orElseThrow();
     }
 
     public List<TsvWord> getTessWords(String text) {
