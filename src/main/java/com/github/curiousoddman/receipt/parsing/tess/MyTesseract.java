@@ -18,7 +18,9 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Iterator;
+import java.util.Properties;
 
 @Slf4j
 @Component
@@ -84,9 +86,27 @@ public class MyTesseract extends Tesseract {
         throw new UnsupportedOperationException();
     }
 
-    public String doOCR(File inputFile, Rectangle rect, boolean isTsv) throws TesseractException {
+    @SneakyThrows
+    public Properties getProperties() {
+        try {
+            Field props = this.getClass().getSuperclass().getDeclaredField("prop");
+            props.setAccessible(true);
+            return (Properties) props.get(this);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return new Properties();
+        }
+    }
+
+    public String doOCR(File inputFile, Rectangle rect, boolean isTsv, boolean isDigitsOnly) throws TesseractException {
         setPageSegMode(ITessAPI.TessPageSegMode.PSM_SINGLE_BLOCK);
         setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_DEFAULT);
+        if (isDigitsOnly) {
+            //baseApi.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, );
+            setVariable("tessedit_char_whitelist", "-.,0123456789");
+        } else {
+            getProperties().remove("tessedit_char_whitelist");
+        }
         try {
             String fileName = inputFile.getName();
             if (!fileName.endsWith(".tiff")) {

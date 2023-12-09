@@ -218,7 +218,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         String text;
         try {
             // Next try to re-ocr the word itself
-            text = tesseract.doOCR(context.getOriginalFile(), word.getWordRect(), false);
+            text = tesseract.doOCR(context.getOriginalFile(), word.getWordRect(), false, true);
             if (validateFormat(expectedFormat, text)) {
                 return ConversionUtils.getReceiptNumber(text);
             }
@@ -230,7 +230,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         TsvLine line;
         try {
             // Finally try to re-ocr whole line and get the word by the same word num.
-            String tsvText = tesseract.doOCR(context.getOriginalFile(), word.getParentLine().getRectangle(), true);
+            String tsvText = tesseract.doOCR(context.getOriginalFile(), word.getParentLine().getRectangle(), true, false);
             TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
             line = tsvDocument.getLines().get(0);
             Optional<TsvWord> wordByWordNum = line.getWordByWordNum(word.getWordNum());
