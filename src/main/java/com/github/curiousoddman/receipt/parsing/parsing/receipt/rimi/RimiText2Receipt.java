@@ -186,7 +186,10 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
         Optional<TsvWord> countText = priceLine.getWordByWordNum(1);
         Optional<TsvWord> pricePerUnitText = priceLine.getWordByWordNum(4);
-        String unitsWord = priceLine.getWordByWordNum(2).orElseThrow().getText();
+        String unitsWord = priceLine
+                .getWordByWordNum(2)
+                .orElseThrow()
+                .getText();
         ReceiptItem item = ReceiptItem
                 .builder()
                 .description(Strings.join(itemNameBuilder, ' ').trim())
