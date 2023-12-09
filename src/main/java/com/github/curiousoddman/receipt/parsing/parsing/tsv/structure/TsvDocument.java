@@ -13,7 +13,7 @@ public class TsvDocument {
     private final List<TsvPage> pages;
 
     @JsonIgnore
-    public List<String> getLines() {
+    public List<TsvLine> getLines() {
         return pages
                 .stream()
                 .map(TsvPage::getBlocks)
@@ -22,7 +22,6 @@ public class TsvDocument {
                 .flatMap(Collection::stream)
                 .map(TsvParagraph::getLines)
                 .flatMap(List::stream)
-                .map(TsvLine::getText)
                 .toList();
     }
 

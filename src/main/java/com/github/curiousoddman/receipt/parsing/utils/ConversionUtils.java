@@ -16,24 +16,14 @@ import static java.util.stream.Collectors.groupingBy;
 public class ConversionUtils {
 
     public static MyBigDecimal getReceiptNumber(String text) {
-        String cleanedInputText = text.replace("\r", "").replace("\n", "");
-        Matcher matcher = Patterns.NUMBER_PATTERN.matcher(cleanedInputText);
-        if (!matcher.matches()) {
-            throw new IllegalStateException("Value '" + text + "' does not match number pattern");
-        }
-
-        int groupCount = matcher.groupCount();
-        String cleanedValue;
-        if (groupCount == 3 && matcher.group(3) != null && !matcher.group(3).isBlank()) {
-            cleanedValue = matcher.group(1) + '.' + matcher.group(3);
-        } else {
-            cleanedValue = matcher.group(1);
-        }
-
+        String cleanedInputText = text
+                .replace("\r", "")
+                .replace("\n", "")
+                .replace(',', '.');
         try {
-            return new MyBigDecimal(new BigDecimal(cleanedValue), text, null);
+            return new MyBigDecimal(new BigDecimal(cleanedInputText), text, null);
         } catch (Exception e) {
-            throw new IllegalStateException("Error value '" + cleanedValue + "'", e);
+            return new MyBigDecimal(null, text, e.getMessage());
         }
     }
 

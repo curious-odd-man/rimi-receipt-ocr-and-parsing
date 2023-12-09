@@ -3,6 +3,15 @@ package com.github.curiousoddman.receipt.parsing.utils;
 import java.util.regex.Pattern;
 
 public class Patterns {
+
+    public static final Pattern JUR_ADDR = Pattern.compile("Jur. adrese:.*");
+
+    public static final Pattern INTEGER = Pattern.compile("-?\\d+");
+
+    public static final Pattern MONEY_AMOUNT = Pattern.compile("[-+]?\\d+[.,]\\d\\d");
+
+    public static final Pattern WEIGHT = Pattern.compile("\\d+[.,]\\d\\d\\d");
+
     /*
     1,076 kg X 2,99 EUR/kg 3,22 A
     1 gab X 3,19 EUR 371912
