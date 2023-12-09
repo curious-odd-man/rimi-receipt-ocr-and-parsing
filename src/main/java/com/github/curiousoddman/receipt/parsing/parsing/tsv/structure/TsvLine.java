@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -50,5 +51,13 @@ public class TsvLine {
                 .stream()
                 .filter(w -> w.getWordNum() == wordNum)
                 .findAny();
+    }
+
+    @JsonIgnore
+    public Rectangle getRectangle() {
+        return new Rectangle(x - 2,
+                             y - 2,
+                             width + 4,
+                             height + 4);
     }
 }

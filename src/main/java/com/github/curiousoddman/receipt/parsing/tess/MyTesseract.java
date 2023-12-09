@@ -81,6 +81,10 @@ public class MyTesseract extends Tesseract {
 
     @Override
     public String doOCR(File inputFile, Rectangle rect) throws TesseractException {
+        throw new UnsupportedOperationException();
+    }
+
+    public String doOCR(File inputFile, Rectangle rect, boolean isTsv) throws TesseractException {
         setPageSegMode(ITessAPI.TessPageSegMode.PSM_SINGLE_BLOCK);
         setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_DEFAULT);
         try {
@@ -109,7 +113,7 @@ public class MyTesseract extends Tesseract {
 
                 for (int i = 0; i < imageTotal; i++) {
                     IIOImage oimage = reader.readAll(i, reader.getDefaultReadParam());
-                    result.append(doOCR(oimage, inputFile.getPath(), i + 1, false, rect));
+                    result.append(doOCR(oimage, inputFile.getPath(), i + 1, isTsv, rect));
                 }
             } finally {
                 deleteTmpFile(inputFile, imageFile);

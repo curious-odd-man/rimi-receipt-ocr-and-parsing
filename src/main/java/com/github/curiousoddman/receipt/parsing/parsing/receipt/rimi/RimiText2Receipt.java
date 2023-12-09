@@ -3,12 +3,15 @@ package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.BasicText2Receipt;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvLine;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
 import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.TesseractException;
@@ -35,6 +38,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     private final MyTesseract          tesseract;
     private final ItemNumbersValidator itemNumbersValidator;
+    private final Tsv2Struct           tsv2Struct;
 
     @Override
     protected RimiContext getContext(MyTessResult tessResult) {
@@ -128,30 +132,38 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         List<String> itemNameBuilder = new ArrayList<>();
         TsvLine priceLine = null;
         TsvLine discountLine = null;
+        ItemLines itemLines = new ItemLines();
         for (TsvLine line : linesBetween) {
 
             if (line.isBlank()) {
                 continue;
             }
 
+
             if (COUNT_PRICE_AND_SUM_LINE.matcher(line.getText()).matches()) {
                 priceLine = line;
+                itemLines.setPriceLine(line);
                 continue;
             }
 
             if (priceLine == null) {
                 itemNameBuilder.add(line.getText());
+                itemLines.getDescriptionLines().add(line);
             } else {
                 if (ITEM_DISCOUNT_LINE_PATTERN.matcher(line.getText()).matches()) {
                     discountLine = line;
+                    itemLines.setDiscountLine(line);
                 } else {
-                    ReceiptItem item = createItem(context, line.getText(), discountLine, priceLine, itemNameBuilder);
+                    ReceiptItem item = createItem(context, discountLine, priceLine, itemNameBuilder);
 //                    if (!itemNumbersValidator.isItemValid(item)) {
-//                        item = tryOcrNumbersAgain(context, item);
+//                        item = tryOcrNumbersAgain(context, item, itemLines);
 //                    }
                     items.add(item);
                     priceLine = null;
                     discountLine = null;
+                    itemLines = new ItemLines();
+                    itemLines.getDescriptionLines().add(line);
+                    itemNameBuilder.add(line.getText());
                 }
             }
         }
@@ -159,7 +171,6 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     }
 
     private ReceiptItem createItem(RimiContext context,
-                                   String line,
                                    TsvLine discountLine,
                                    TsvLine priceLine,
                                    List<String> itemNameBuilder) {
@@ -187,7 +198,6 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 .build();
 
         itemNameBuilder.clear();
-        itemNameBuilder.add(line);
         return item;
     }
 
@@ -198,20 +208,43 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     }
 
     private MyBigDecimal getReceiptNumber(TsvWord word, Pattern expectedFormat, RimiContext context) {
+        List<String> values = new ArrayList<>();
         String value = word.getText();
+        // First attempt to parse big decimal as is
         if (validateFormat(expectedFormat, value)) {
             return ConversionUtils.getReceiptNumber(value);
         }
+        values.add(value);
         String text;
         try {
-            text = tesseract.doOCR(context.getOriginalFile(), word.getWordRect());
+            // Next try to re-ocr the word itself
+            text = tesseract.doOCR(context.getOriginalFile(), word.getWordRect(), false);
             if (validateFormat(expectedFormat, text)) {
                 return ConversionUtils.getReceiptNumber(text);
             }
         } catch (TesseractException ex) {
             return new MyBigDecimal(null, null, ex.getMessage());
         }
-        return new MyBigDecimal(null, null, "Value '" + value + "' or '" + text + "' does not match expected format: " + expectedFormat.pattern());
+
+        values.add(text);
+
+        try {
+            // Finally try to re-ocr whole line and get the word by the same word num.
+            String tsvText = tesseract.doOCR(context.getOriginalFile(), word.getParentLine().getRectangle(), true);
+            TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
+            TsvLine line = tsvDocument.getLines().get(0);
+            Optional<TsvWord> wordByWordNum = line.getWordByWordNum(word.getWordNum());
+            text = wordByWordNum.get().getText();
+            if (validateFormat(expectedFormat, text)) {
+                return ConversionUtils.getReceiptNumber(text);
+            }
+        } catch (Exception ex) {
+            return new MyBigDecimal(null, null, ex.getMessage());
+        }
+
+        values.add(text);
+
+        return new MyBigDecimal(null, null, "Value none of '" + values + "' does match expected format: " + expectedFormat.pattern());
     }
 
     private static boolean validateFormat(Pattern expectedFormat, String value) {
@@ -223,68 +256,6 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 .matcher(replaced)
                 .matches();
     }
-//
-//        try {
-//            return ConversionUtils.getReceiptNumber(value);
-//        } catch (Exception e) {
-//            List<TsvWord> tessWords = context.getTessWords(value);
-//            if (tessWords.size() == 1) {
-//                TsvWord tsvWord = tessWords.get(0);
-//                String reOcredText = null;
-//                try {
-//                    reOcredText = tesseract.doOCR(context.getOriginalFile(), tsvWord.getWordRect());
-//                } catch (TesseractException ex) {
-//                    return new MyBigDecimal(null, null, ex.getMessage());
-//                }
-//                return ConversionUtils.getReceiptNumber(reOcredText);
-//            } else {
-//                printUnableToFindTessWordsError(tessWords);
-//            }
-//            return new MyBigDecimal(null, null, e.getMessage());
-//        }
-    //}
-//
-//    private MyBigDecimal getReceiptNumber(RimiContext context, String value, String anotherPart) {
-//        try {
-//            return ConversionUtils.getReceiptNumber(value);
-//        } catch (Exception e) {
-//            List<TsvWord> tessWords = context.getTessWords(value);
-//            List<TsvWord> anotherTessWords = context.getTessWords(anotherPart);
-//
-//            Map<TsvWord, TsvWord> wordsThatFollow = new HashMap<>();
-//
-//            for (TsvWord tessWord : tessWords) {
-//                findFollowingWord(tessWord, anotherTessWords, wordsThatFollow);
-//            }
-//
-//            if (wordsThatFollow.size() == 1) {
-//                Iterator<Map.Entry<TsvWord, TsvWord>> iterator = wordsThatFollow.entrySet().iterator();
-//                Map.Entry<TsvWord, TsvWord> theOnlyValue = iterator.next();
-//                TsvWord firstWord = theOnlyValue.getKey();
-//                TsvWord secondWord = theOnlyValue.getValue();
-//                Rectangle bothWordsRectangle = Utils.uniteRectangles(firstWord.getWordRect(), secondWord.getWordRect());
-//                String reOcredText = null;
-//                try {
-//                    reOcredText = tesseract.doOCR(context.getOriginalFile(), bothWordsRectangle);
-//                } catch (TesseractException ex) {
-//                    return new MyBigDecimal(null, null, ex.getMessage());
-//                }
-//                return ConversionUtils.getReceiptNumber(reOcredText);
-//            } else {
-//                log.error("Cannot find tess following words: {}", wordsThatFollow);
-//            }
-//            return new MyBigDecimal(null, null, e.getMessage());
-//        }
-//    }
-
-//    private static void findFollowingWord(TsvWord tessWord, List<TsvWord> anotherTessWords, Map<TsvWord, TsvWord> wordsThatFollow) {
-//        for (TsvWord anotherTessWord : anotherTessWords) {
-//            if (tessWord.isFollowedBy(anotherTessWord)) {
-//                wordsThatFollow.put(tessWord, anotherTessWord);
-//                return;
-//            }
-//        }
-//    }
 
 //    private ReceiptItem tryOcrNumbersAgain(RimiContext context, ReceiptItem item) {
 //        List<ReceiptNumberWithSetter> allNumbers = List.of(
@@ -323,14 +294,21 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 //        return item;
 //    }
 
+    @Data
+    private static class ItemLines {
+        List<TsvLine> descriptionLines = new ArrayList<>();
+        TsvLine       priceLine;
+        TsvLine       discountLine;
+    }
+
     private record ReceiptNumberWithSetter(MyBigDecimal rn, BiConsumer<ReceiptItem, MyBigDecimal> setter) {
 
     }
 
-//    private static void printUnableToFindTessWordsError(List<TsvWord> tessWords) {
-//        log.error("Cannot find tess word: {}", tessWords.size());
-//        for (TsvWord tessWord : tessWords) {
-//            log.error("\t{}", tessWord);
-//        }
-//    }
+    private static void printUnableToFindTessWordsError(List<TsvWord> tessWords) {
+        log.error("Cannot find tess word: {}", tessWords.size());
+        for (TsvWord tessWord : tessWords) {
+            log.error("\t{}", tessWord);
+        }
+    }
 }
