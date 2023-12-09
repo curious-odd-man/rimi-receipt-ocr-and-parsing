@@ -227,22 +227,24 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         }
 
         values.add(text);
-
+        TsvLine line;
         try {
             // Finally try to re-ocr whole line and get the word by the same word num.
             String tsvText = tesseract.doOCR(context.getOriginalFile(), word.getParentLine().getRectangle(), true);
             TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
-            TsvLine line = tsvDocument.getLines().get(0);
+            line = tsvDocument.getLines().get(0);
             Optional<TsvWord> wordByWordNum = line.getWordByWordNum(word.getWordNum());
-            text = wordByWordNum.get().getText();
-            if (validateFormat(expectedFormat, text)) {
-                return ConversionUtils.getReceiptNumber(text);
+            if (wordByWordNum.isPresent()) {
+                text = wordByWordNum.get().getText();
+                if (validateFormat(expectedFormat, text)) {
+                    return ConversionUtils.getReceiptNumber(text);
+                }
             }
         } catch (Exception ex) {
             return new MyBigDecimal(null, null, ex.getMessage());
         }
 
-        values.add(text);
+        values.add("word by index " + word.getWordNum() + " from line " + line.getText());
 
         return new MyBigDecimal(null, null, "Value none of '" + values + "' does match expected format: " + expectedFormat.pattern());
     }
