@@ -68,13 +68,17 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected MyBigDecimal getTotalPayment(RimiContext context) {
-        String paymentAmount = getFirstGroup(context, PAYMENT_SUM);
-        String totalAmount = getFirstGroup(context, TOTAL_AMOUNT);
-        String bankCardAmount = getFirstGroup(context, BANK_CARD_AMOUNT);
-        return ConversionUtils.getReceiptNumber(paymentAmount, totalAmount, bankCardAmount);
+        Optional<String> paymentAmount = getFirstGroup(context, PAYMENT_SUM);
+        Optional<String> totalAmount = getFirstGroup(context, TOTAL_AMOUNT);
+        Optional<String> bankCardAmount = getFirstGroup(context, BANK_CARD_AMOUNT);
+        return ConversionUtils.getReceiptNumber(
+                paymentAmount.orElse(null),
+                totalAmount.orElse(null),
+                bankCardAmount.orElse(null)
+        );
     }
 
-    private static String getFirstGroup(RimiContext context, Pattern pattern) {
+    private static Optional<String> getFirstGroup(RimiContext context, Pattern pattern) {
         return ConversionUtils.getFirstGroup(context.getLineMatching(pattern, 0), pattern);
     }
 
@@ -88,7 +92,9 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         for (String text : linesToMatch) {
             String line = context.getLineContaining(text, 0);
             if (line != null) {
-                return ConversionUtils.getBigDecimalAfterToken(line, text);
+                return ConversionUtils
+                        .getBigDecimalAfterToken(line, text)
+                        .orElse(new MyBigDecimal(null, null, "Big decimal cannot be parsed"));
             }
         }
 

@@ -65,8 +65,7 @@ public class App implements ApplicationRunner {
                 Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, myTessResult);
                 if (optionalReceipt.isPresent()) {
                     Receipt receipt = optionalReceipt.get();
-                    String receiptJson = OBJECT_MAPPER
-                            .writeValueAsString(receipt);
+                    String receiptJson = OBJECT_MAPPER.writeValueAsString(receipt);
 
                     fileCache.create(sourcePdfName + ".json", receiptJson);
 

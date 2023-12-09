@@ -74,24 +74,24 @@ public class ConversionUtils {
         throw noSuchElementException;
     }
 
-    public static MyBigDecimal getBigDecimalAfterToken(String line, String token) {
+    public static Optional<MyBigDecimal> getBigDecimalAfterToken(String line, String token) {
         String[] splitByProperty = line.split(token);
         for (String s : splitByProperty) {
             if (!s.isBlank()) {
-                return getReceiptNumber(s);
+                return Optional.of(getReceiptNumber(s));
             }
         }
-        return null;
+        return Optional.empty();
     }
 
-    public static String getFirstGroup(String line, Pattern pattern) {
+    public static Optional<String> getFirstGroup(String line, Pattern pattern) {
         if (line != null) {
             Matcher matcher = pattern.matcher(line);
             if (matcher.matches()) {
-                return matcher.group(1);
+                return Optional.of(matcher.group(1));
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     public static LocalDateTime parseDateTime(String text) {
