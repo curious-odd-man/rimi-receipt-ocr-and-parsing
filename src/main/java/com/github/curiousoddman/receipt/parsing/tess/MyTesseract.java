@@ -99,12 +99,16 @@ public class MyTesseract extends Tesseract {
     }
 
     public String doOCR(File inputFile, Rectangle rect, boolean isTsv, boolean isDigitsOnly) throws TesseractException {
-        setPageSegMode(ITessAPI.TessPageSegMode.PSM_SINGLE_BLOCK);
-        setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_DEFAULT);
         if (isDigitsOnly) {
+            setPageSegMode(ITessAPI.TessPageSegMode.PSM_RAW_LINE);
+            setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_TESSERACT_ONLY);
+
             //baseApi.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, );
             setVariable("tessedit_char_whitelist", "-.,0123456789");
         } else {
+            setPageSegMode(ITessAPI.TessPageSegMode.PSM_SINGLE_BLOCK);
+            setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_DEFAULT);
+
             getProperties().remove("tessedit_char_whitelist");
         }
         try {
