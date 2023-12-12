@@ -14,10 +14,12 @@ public interface Positioned {
     @JsonIgnore
     int getIndex();
 
+    @JsonIgnore
     default int getEndX() {
         return getX() + getWidth();
     }
 
+    @JsonIgnore
     default int getEndY() {
         return getY() + getHeight();
     }
