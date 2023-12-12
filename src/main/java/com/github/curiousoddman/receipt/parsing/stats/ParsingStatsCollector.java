@@ -51,10 +51,11 @@ public class ParsingStatsCollector {
         log.info("======================== {} ====================", header);
         log.info("\tIndex: {}", statsToString(indexStat));
         log.info("\tX: {}", statsToString(xStat));
-        log.info("\tY: {}", statsToString(yStat));
         log.info("\tEnd X: {}", statsToString(endXStat));
-        log.info("\tEnd Y: {}", statsToString(endYStat));
         log.info("\tWidth: {}", statsToString(widthStat));
+        
+        log.info("\tY: {}", statsToString(yStat));
+        log.info("\tEnd Y: {}", statsToString(endYStat));
         log.info("\tHeight: {}", statsToString(heightStat));
     }
 
