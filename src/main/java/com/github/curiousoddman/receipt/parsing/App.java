@@ -11,6 +11,7 @@ import com.github.curiousoddman.receipt.parsing.parsing.Pdf2Text;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.Text2Receipt;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
+import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationExecutor;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationStatsCollector;
@@ -50,6 +51,7 @@ public class App implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         ValidationStatsCollector validationStatsCollector = new ValidationStatsCollector();
+        ParsingStatsCollector parsingStatsCollector = new ParsingStatsCollector();
         try (Stream<Path> files = Files.list(Paths.get("D:\\Programming\\git\\private-tools\\gmail-client\\output"))) {
             List<Path> allPdfFiles = files.filter(App::isPdfFile).toList();
             for (Path file : allPdfFiles) {
@@ -62,7 +64,7 @@ public class App implements ApplicationRunner {
                 TsvDocument tsvDocument = tsv2Struct.parseTsv(myTessResult.getTsvText());
                 myTessResult.setTsvDocument(tsvDocument);
                 fileCache.create(sourcePdfName + ".tsv.json", OBJECT_MAPPER.writeValueAsString(tsvDocument));
-                Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, myTessResult);
+                Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, myTessResult, parsingStatsCollector);
                 if (optionalReceipt.isPresent()) {
                     Receipt receipt = optionalReceipt.get();
                     String receiptJson = OBJECT_MAPPER.writeValueAsString(receipt);
@@ -75,20 +77,27 @@ public class App implements ApplicationRunner {
                 }
             }
         }
+
+        parsingStatsCollector.printStats();
     }
 
 
-    private Optional<Receipt> parseWithAnyParser(String fileName, MyTessResult myTessResult) {
+    private Optional<Receipt> parseWithAnyParser(String fileName,
+                                                 MyTessResult myTessResult,
+                                                 ParsingStatsCollector parsingStatsCollector) {
         return text2ReceiptList
                 .stream()
-                .map(parser -> tryParseOrNull(fileName, myTessResult, parser))
+                .map(parser -> tryParseOrNull(fileName, myTessResult, parser, parsingStatsCollector))
                 .filter(Objects::nonNull)
                 .findFirst();
     }
 
-    private static Receipt tryParseOrNull(String fileName, MyTessResult myTessResult, Text2Receipt parser) {
+    private static Receipt tryParseOrNull(String fileName,
+                                          MyTessResult myTessResult,
+                                          Text2Receipt parser,
+                                          ParsingStatsCollector parsingStatsCollector) {
         try {
-            return parser.parse(fileName, myTessResult);
+            return parser.parse(fileName, myTessResult, parsingStatsCollector);
         } catch (Exception e) {
             log.error("Failed to parse receipt with parser {}", parser.getClass(), e);
             return null;

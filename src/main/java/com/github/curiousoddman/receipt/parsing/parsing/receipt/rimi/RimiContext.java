@@ -3,7 +3,10 @@ package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.Context;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvLine;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
+import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -13,14 +16,12 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Data
+@RequiredArgsConstructor
 public class RimiContext implements Context {
-    private final File        originalFile;
-    private final TsvDocument tsvDocument;
+    private final File                  originalFile;
+    private final TsvDocument           tsvDocument;
+    private final ParsingStatsCollector parsingStatsCollector;
 
-    public RimiContext(File originalFile, TsvDocument tsvDocument) {
-        this.originalFile = originalFile;
-        this.tsvDocument = tsvDocument;
-    }
 
     public TsvLine getLineContaining(String text, int index) {
         List<TsvLine> linesContaining = getLinesContaining(text);
@@ -94,5 +95,49 @@ public class RimiContext implements Context {
             }
         }
         return result;
+    }
+
+    public void collectShopNameLocation(TsvLine tsvLine) {
+        parsingStatsCollector.collectShopNameLocation(originalFile, tsvLine);
+    }
+
+    public void collectCashRegisterNumberLocation(TsvLine tsvLine) {
+        parsingStatsCollector.collectCashRegisterNumberLocation(originalFile, tsvLine);
+    }
+
+    public void collectTotalSavings(TsvWord tsvWord) {
+        parsingStatsCollector.collectTotalSavings(originalFile, tsvWord);
+    }
+
+    public void collectShopBrandMoneyLocation(TsvWord tsvWord) {
+        parsingStatsCollector.collectShopBrandMoneyLocation(originalFile, tsvWord);
+    }
+
+    public void collectDocumentNumberLocation(TsvLine line) {
+        parsingStatsCollector.collectDocumentNumberLocation(originalFile, line);
+    }
+
+    public void collectItemFinalCostLocation(TsvWord tsvWord) {
+        parsingStatsCollector.collectItemFinalCostLocation(originalFile, tsvWord);
+    }
+
+    public void collectItemDiscountLocation(TsvWord tsvWord) {
+        parsingStatsCollector.collectItemDiscountLocation(originalFile, tsvWord);
+    }
+
+    public void collectItemCountLocation(TsvWord tsvWord) {
+        parsingStatsCollector.collectItemCountLocation(originalFile, tsvWord);
+    }
+
+    public void collectPricePerUnitLocation(TsvWord tsvWord) {
+        parsingStatsCollector.collectPricePerUnitLocation(originalFile, tsvWord);
+    }
+
+    public void collectItemUnitsLocation(TsvWord tsvWord) {
+        parsingStatsCollector.collectItemUnitsLocation(originalFile, tsvWord);
+    }
+
+    public void collectItemFinalCostWithDiscountLocation(TsvWord tsvWord) {
+        parsingStatsCollector.collectItemFinalCostWithDiscountLocation(originalFile, tsvWord);
     }
 }

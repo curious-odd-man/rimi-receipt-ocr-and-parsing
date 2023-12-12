@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @ToString
 @Getter
 @RequiredArgsConstructor
-public class TsvWord {
+public class TsvWord implements Positioned {
     @JsonIgnore
     private final TsvLine parentLine;
 
@@ -37,5 +37,10 @@ public class TsvWord {
     public boolean isFollowedBy(TsvWord anotherTessWord) {
         return parentLine == anotherTessWord.parentLine
                 && wordNum + 1 == anotherTessWord.wordNum;
+    }
+
+    @Override
+    public int getIndex() {
+        return wordNum;
     }
 }

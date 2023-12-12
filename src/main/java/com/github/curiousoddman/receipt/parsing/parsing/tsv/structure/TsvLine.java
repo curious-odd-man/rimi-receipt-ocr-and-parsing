@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
-public class TsvLine {
+public class TsvLine implements Positioned {
     @JsonIgnore
     private final TsvParagraph parentParagraph;
 
@@ -59,5 +59,10 @@ public class TsvLine {
                              y - 2,
                              width + 4,
                              height + 4);
+    }
+
+    @Override
+    public int getIndex() {
+        return lineNum;
     }
 }
