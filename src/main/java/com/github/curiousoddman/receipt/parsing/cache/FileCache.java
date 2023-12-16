@@ -9,7 +9,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.github.curiousoddman.receipt.parsing.tess.MyTesseract.getImageFile;
 
@@ -60,20 +59,6 @@ public class FileCache {
             Files.createDirectories(newRoot);
         }
         return newRoot;
-    }
-
-
-    @SneakyThrows
-    public File getOrCreateFile(Path pdfFile, Supplier<File> valueSupplier) {
-        Path newRoot = getSubdirectoryPath(pdfFile);
-        Path cacheFilePath = newRoot.resolve(pdfFile);
-        if (Files.exists(cacheFilePath)) {
-            return cacheFilePath.toFile();
-        }
-
-        File createdFile = valueSupplier.get();
-        Files.copy(createdFile.toPath(), cacheFilePath);
-        return createdFile;
     }
 
     @SneakyThrows
