@@ -88,11 +88,19 @@ public class ConversionUtils {
     public static MyLocalDateTime parseDateTime(String text) {
         String yyyyMMddHHmmss = "yyyyMMddHHmmss";
 
-        return new MyLocalDateTime(LocalDateTime.parse(
-                NON_DIGITS.matcher(text).replaceAll("").substring(0, yyyyMMddHHmmss.length()),
-                DateTimeFormatter.ofPattern(yyyyMMddHHmmss)),
-                                   text,
-                                   null
-        );
+        try {
+            return new MyLocalDateTime(LocalDateTime.parse(
+                    NON_DIGITS.matcher(text).replaceAll("").substring(0, yyyyMMddHHmmss.length()),
+                    DateTimeFormatter.ofPattern(yyyyMMddHHmmss)),
+                                       text,
+                                       null
+            );
+        } catch (Exception e) {
+            return new MyLocalDateTime(
+                    null,
+                    text,
+                    e.getMessage()
+            );
+        }
     }
 }
