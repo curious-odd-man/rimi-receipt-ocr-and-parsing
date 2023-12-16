@@ -17,9 +17,12 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -97,6 +100,18 @@ public class MyTesseract extends Tesseract {
         ocrConfig.apply(this);
         File tiffFile = ocrConfig.getTiffFile().toFile();
         String tiffFilePath = ocrConfig.getTiffFile().toAbsolutePath().toString();
+
+//        Rectangle rect = ocrConfig.getOcrArea();
+//        if (rect != null) {
+//            int x = rect.x;
+//            int y = rect.y;
+//            int width = rect.width;
+//            int height = rect.height;
+//            Path rectangledFileName = Path.of(ocrConfig.getTiffFile() + String.format("_%d_%d_%d_%d.tiff", x, y, width, height));
+//            log.info("Saving rectangled file: {}", rectangledFileName.toAbsolutePath());
+//            saveFileWithRectangle(tiffFile, rectangledFileName, x, y, width, height);
+//        }
+
         try {
             String imageFileFormat = ImageIOHelper.getImageFileFormat(tiffFile);
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
@@ -155,5 +170,16 @@ public class MyTesseract extends Tesseract {
         }
 
         return text;
+    }
+
+    @SneakyThrows
+    private static void saveFileWithRectangle(File inputFile, Path rectangledFileName, int x, int y, int width, int height) {
+        Files.copy(inputFile.toPath(), rectangledFileName);
+        BufferedImage img = ImageIO.read(rectangledFileName.toFile());
+        Graphics2D g2d = img.createGraphics();
+        g2d.setColor(Color.RED);
+        g2d.drawRect(x, y, width, height);
+        g2d.dispose();
+        ImageIO.write(img, "tiff", rectangledFileName.toFile());
     }
 }

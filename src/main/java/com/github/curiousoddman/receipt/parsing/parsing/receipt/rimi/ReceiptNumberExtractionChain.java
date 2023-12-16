@@ -42,7 +42,7 @@ public class ReceiptNumberExtractionChain {
             return ConversionUtils.getReceiptNumber(value);
         }
 
-        triedValues.add(value);
+        triedValues.add("original: " + value);
         return reOcrWordLocation(originalWord);
     }
 
@@ -64,7 +64,7 @@ public class ReceiptNumberExtractionChain {
             log.error(ex.getMessage(), ex);
         }
 
-        triedValues.add(value);
+        triedValues.add("re-ocr word: " + value);
 
         return reOcrWordLocationInOriginalTiff(originalWord);
     }
@@ -87,7 +87,7 @@ public class ReceiptNumberExtractionChain {
             log.error(ex.getMessage(), ex);
         }
 
-        triedValues.add(value);
+        triedValues.add("re-ocr original file: " + value);
 
         return reOcrWordLine(originalWord);
     }
@@ -104,7 +104,15 @@ public class ReceiptNumberExtractionChain {
             // Finally try to re-ocr whole line and get the word by the same word num.
             String tsvText = tesseract.doOCR(ocrConfig);
             TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
-            line = tsvDocument.getLines().get(0);
+//            if (tsvDocument.getLines().size() > 1) {
+//                log.error("Found more than one line when re-ocr a line");
+//                for (TsvLine tsvLine : tsvDocument.getLines()) {
+//                    log.error("\t{}", tsvLine.getText());
+//                }
+//                log.error("----------------");
+//            }
+            List<TsvLine> lines = tsvDocument.getLines();
+            line = lines.get(lines.size() - 1);     // Rectangle of line is streched up, touching previous line, that appears here as well.
             Optional<TsvWord> wordByWordNum = line.getWordByWordNum(originalWord.getWordNum());
             if (wordByWordNum.isPresent()) {
                 TsvWord tsvWord = wordByWordNum.get();
@@ -114,7 +122,7 @@ public class ReceiptNumberExtractionChain {
                     return ConversionUtils.getReceiptNumber(text);
                 }
             }
-            triedValues.add("word by index " + originalWord.getWordNum() + " from line " + line.getText());
+            triedValues.add("re-ocr line: idx=" + originalWord.getWordNum() + "; line=" + line.getText());
         } catch (Exception ex) {
             triedValues.add(ex.getMessage());
             log.error(ex.getMessage(), ex);
@@ -145,7 +153,7 @@ public class ReceiptNumberExtractionChain {
                     return ConversionUtils.getReceiptNumber(text);
                 }
             }
-            triedValues.add("word by index " + originalWord.getWordNum() + " from line " + line.getText());
+            triedValues.add("re-ocr original file line: idx=" + originalWord.getWordNum() + "; line=" + line.getText());
         } catch (Exception ex) {
             triedValues.add(ex.getMessage());
             log.error(ex.getMessage(), ex);
@@ -174,7 +182,7 @@ public class ReceiptNumberExtractionChain {
                 return new MyBigDecimal(null, null, ex.getMessage());
             }
 
-            triedValues.add("number by corrected location: " + text);
+            triedValues.add("ocr corrected location: " + text);
         }
 
         return reportError();
