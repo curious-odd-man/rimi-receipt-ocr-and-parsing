@@ -8,7 +8,7 @@ import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -18,8 +18,9 @@ import java.util.regex.Pattern;
 @Data
 @RequiredArgsConstructor
 public class RimiContext implements Context {
-    private final File                  originalFile;
-    private final TsvDocument           tsvDocument;
+    private final Path        originalFile;
+    private final Path        tiffFile;
+    private final TsvDocument tsvDocument;
     private final ParsingStatsCollector parsingStatsCollector;
 
 

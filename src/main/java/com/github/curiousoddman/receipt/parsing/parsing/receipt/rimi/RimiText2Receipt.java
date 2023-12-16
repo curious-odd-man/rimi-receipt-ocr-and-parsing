@@ -1,6 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
+import com.github.curiousoddman.receipt.parsing.model.MyLocalDateTime;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import com.github.curiousoddman.receipt.parsing.parsing.LocationCorrection;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.BasicText2Receipt;
@@ -22,7 +23,6 @@ import org.springframework.stereotype.Component;
 
 import java.awt.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -47,7 +47,12 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected RimiContext getContext(MyTessResult tessResult, ParsingStatsCollector parsingStatsCollector) {
-        return new RimiContext(tessResult.getInputFile(), tessResult.getTsvDocument(), parsingStatsCollector);
+        return new RimiContext(
+                tessResult.getInputFile(),
+                tessResult.getTiffFile(),
+                tessResult.getTsvDocument(),
+                parsingStatsCollector
+        );
     }
 
     @Override
@@ -124,9 +129,12 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     }
 
     @Override
-    protected LocalDateTime getReceiptDateTime(RimiContext context) {
-        String time = getFirstGroup(context, RECEIPT_TIME_PATTERN).orElseThrow();
-        return parseDateTime(time);
+    protected MyLocalDateTime getReceiptDateTime(RimiContext context) {
+        Optional<String> firstGroup = getFirstGroup(context, RECEIPT_TIME_PATTERN);
+        if (firstGroup.isEmpty()) {
+            return new MyLocalDateTime(null, "", "Counld not locate group for date/time");
+        }
+        return parseDateTime(firstGroup.orElseThrow());
     }
 
     @Override
@@ -236,7 +244,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         Rectangle originalWordRectangle = originalWord.getWordRect();
         try {
             // Next try to re-ocr the word itself
-            text = tesseract.doOCR(context.getOriginalFile(), originalWordRectangle, false, true);
+            text = tesseract.doOCR(context.getTiffFile(), originalWordRectangle, false, true);
             if (validateFormat(expectedFormat, text)) {
                 tsvWordConsumer.accept(originalWord);
                 return ConversionUtils.getReceiptNumber(text);
@@ -249,7 +257,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         TsvLine line;
         try {
             // Finally try to re-ocr whole line and get the word by the same word num.
-            String tsvText = tesseract.doOCR(context.getOriginalFile(), originalWord.getParentLine().getRectangle(), true, false);
+            String tsvText = tesseract.doOCR(context.getTiffFile(), originalWord.getParentLine().getRectangle(), true, false);
             TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
             line = tsvDocument.getLines().get(0);
             Optional<TsvWord> wordByWordNum = line.getWordByWordNum(originalWord.getWordNum());
@@ -270,7 +278,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
             // Additionally try to re-ocr by expected location based on statistics in locations-stats.txt
             Rectangle correctedLocation = locationCorrection.getCorrectedLocation(originalWordRectangle);
             try {
-                text = tesseract.doOCR(context.getOriginalFile(), correctedLocation, false, true);
+                text = tesseract.doOCR(context.getTiffFile(), correctedLocation, false, true);
                 if (validateFormat(expectedFormat, text)) {
                     tsvWordConsumer.accept(originalWord);
                     return ConversionUtils.getReceiptNumber(text);

@@ -4,12 +4,13 @@ import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocumen
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-import java.io.File;
+import java.nio.file.Path;
 
 @Data
 @RequiredArgsConstructor
 public class MyTessResult {
-    private final File   inputFile;
+    private final Path   inputFile;
+    private final Path   tiffFile;
     private final String plainText;
     private final String tsvText;
 

@@ -19,6 +19,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -34,17 +35,17 @@ public class MyTesseract extends Tesseract {
         this.fileCache = fileCache;
     }
 
-    public MyTessResult doMyOCR(File inputFile) throws TesseractException {
+    public MyTessResult doMyOCR(Path tiffFile) throws TesseractException {
         try {
             setPageSegMode(1);
             setOcrEngineMode(1);
-            File imageFile = fileCache.getOrCreateFile(inputFile.getName() + ".tiff", () -> getImageFile(inputFile));
-            String imageFileFormat = ImageIOHelper.getImageFileFormat(imageFile);
+            getProperties().remove("tessedit_char_whitelist");
+            String imageFileFormat = ImageIOHelper.getImageFileFormat(tiffFile.toFile());
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
             ImageReader reader = readers.next();
             StringBuilder plainTextResult = new StringBuilder();
             StringBuilder tsvTextResult = new StringBuilder();
-            try (ImageInputStream iis = ImageIO.createImageInputStream(imageFile);) {
+            try (ImageInputStream iis = ImageIO.createImageInputStream(tiffFile.toFile())) {
                 reader.setInput(iis);
                 int imageTotal = reader.getNumImages(true);
 
@@ -53,20 +54,19 @@ public class MyTesseract extends Tesseract {
 
                 for (int i = 0; i < imageTotal; i++) {
                     IIOImage oimage = reader.readAll(i, reader.getDefaultReadParam());
-                    plainTextResult.append(doOCR(oimage, inputFile.getPath(), i + 1, false, null));
-                    tsvTextResult.append(doOCR(oimage, inputFile.getPath(), i + 1, true, null));
+                    plainTextResult.append(doOCR(oimage, tiffFile.toAbsolutePath().toString(), i + 1, false, null));
+                    tsvTextResult.append(doOCR(oimage, tiffFile.toAbsolutePath().toString(), i + 1, true, null));
                 }
 
 
             } finally {
-                // delete temporary TIFF image for PDF
-                deleteTmpFile(inputFile, imageFile);
                 reader.dispose();
                 dispose();
             }
 
             return new MyTessResult(
-                    inputFile,
+                    null,
+                    tiffFile,
                     plainTextResult.toString(),
                     tsvTextResult.toString()
             );
@@ -77,7 +77,7 @@ public class MyTesseract extends Tesseract {
     }
 
     @SneakyThrows
-    private static File getImageFile(File inputFile) {
+    public static File getImageFile(File inputFile) {
         return ImageIOHelper.getImageFile(inputFile);
     }
 
@@ -98,7 +98,7 @@ public class MyTesseract extends Tesseract {
         }
     }
 
-    public String doOCR(File inputFile, Rectangle rect, boolean isTsv, boolean isDigitsOnly) throws TesseractException {
+    public String doOCR(Path tiffFile, Rectangle rect, boolean isTsv, boolean isDigitsOnly) throws TesseractException {
         if (isDigitsOnly) {
             setPageSegMode(ITessAPI.TessPageSegMode.PSM_RAW_LINE);
             setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_TESSERACT_ONLY);
@@ -112,23 +112,11 @@ public class MyTesseract extends Tesseract {
             getProperties().remove("tessedit_char_whitelist");
         }
         try {
-            String fileName = inputFile.getName();
-            if (!fileName.endsWith(".tiff")) {
-                fileName += ".tiff";
-            }
-            File imageFile = fileCache.getOrCreateFile(fileName, () -> getImageFile(inputFile));
-//            int x = rect.x;
-//            int y = rect.y;
-//            int width = rect.width;
-//            int height = rect.height;
-//            String rectangledFileName = inputFile + String.format("_%d_%d_%d_%d.tiff", x, y, width, height);
-//            fileCache.getOrCreateFile(rectangledFileName, () -> getFileWithRectangle(inputFile, rectangledFileName, x, y, width, height));
-
-            String imageFileFormat = ImageIOHelper.getImageFileFormat(imageFile);
+            String imageFileFormat = ImageIOHelper.getImageFileFormat(tiffFile.toFile());
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
             ImageReader reader = readers.next();
             StringBuilder result = new StringBuilder();
-            try (ImageInputStream iis = ImageIO.createImageInputStream(imageFile);) {
+            try (ImageInputStream iis = ImageIO.createImageInputStream(tiffFile.toFile());) {
                 reader.setInput(iis);
                 int imageTotal = reader.getNumImages(true);
 
@@ -137,10 +125,9 @@ public class MyTesseract extends Tesseract {
 
                 for (int i = 0; i < imageTotal; i++) {
                     IIOImage oimage = reader.readAll(i, reader.getDefaultReadParam());
-                    result.append(doOCR(oimage, inputFile.getPath(), i + 1, isTsv, rect));
+                    result.append(doOCR(oimage, tiffFile.toFile().getPath(), i + 1, isTsv, rect));
                 }
             } finally {
-                deleteTmpFile(inputFile, imageFile);
                 reader.dispose();
                 dispose();
             }
@@ -149,16 +136,6 @@ public class MyTesseract extends Tesseract {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new TesseractException(e);
-        }
-    }
-
-    private static void deleteTmpFile(File inputFile, File imageFile) {
-        if (imageFile != null
-                && imageFile.exists()
-                && imageFile != inputFile
-                && imageFile.getName().startsWith("multipage")
-                && imageFile.getName().endsWith(ImageIOHelper.TIFF_EXT)) {
-            imageFile.delete();
         }
     }
 

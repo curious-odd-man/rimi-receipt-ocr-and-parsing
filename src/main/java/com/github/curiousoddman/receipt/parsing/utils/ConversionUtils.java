@@ -1,6 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.utils;
 
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
+import com.github.curiousoddman.receipt.parsing.model.MyLocalDateTime;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -84,11 +85,14 @@ public class ConversionUtils {
         return Optional.empty();
     }
 
-    public static LocalDateTime parseDateTime(String text) {
+    public static MyLocalDateTime parseDateTime(String text) {
         String yyyyMMddHHmmss = "yyyyMMddHHmmss";
-        return LocalDateTime.parse(
+
+        return new MyLocalDateTime(LocalDateTime.parse(
                 NON_DIGITS.matcher(text).replaceAll("").substring(0, yyyyMMddHHmmss.length()),
-                DateTimeFormatter.ofPattern(yyyyMMddHHmmss)
+                DateTimeFormatter.ofPattern(yyyyMMddHHmmss)),
+                                   text,
+                                   null
         );
     }
 }

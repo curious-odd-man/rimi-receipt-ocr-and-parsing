@@ -5,23 +5,23 @@ import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvLine;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 
 @Slf4j
 public class ParsingStatsCollector {
-    private final Map<File, TsvLine>       shopNameLocations                  = new HashMap<>();
-    private final Map<File, TsvLine>       cashRegisterNumberLocations        = new HashMap<>();
-    private final Map<File, TsvWord>       totalSavingsLocations              = new HashMap<>();
-    private final Map<File, TsvWord>       brandMoneyLocations                = new HashMap<>();
-    private final Map<File, TsvLine>       documentNumberLocations            = new HashMap<>();
-    private final Map<File, List<TsvWord>> itemFinalCostLocations             = new HashMap<>();
-    private final Map<File, List<TsvWord>> itemFinalCostWithDiscountLocations = new HashMap<>();
-    private final Map<File, List<TsvWord>> itemDiscountLocations              = new HashMap<>();
-    private final Map<File, List<TsvWord>> itemCountLocations                 = new HashMap<>();
-    private final Map<File, List<TsvWord>> itemPricePerUnitLocations          = new HashMap<>();
-    private final Map<File, List<TsvWord>> itemUnitsLocations                 = new HashMap<>();
+    private final Map<Path, TsvLine>       shopNameLocations                  = new HashMap<>();
+    private final Map<Path, TsvLine>       cashRegisterNumberLocations        = new HashMap<>();
+    private final Map<Path, TsvWord>       totalSavingsLocations              = new HashMap<>();
+    private final Map<Path, TsvWord>       brandMoneyLocations                = new HashMap<>();
+    private final Map<Path, TsvLine>       documentNumberLocations            = new HashMap<>();
+    private final Map<Path, List<TsvWord>> itemFinalCostLocations             = new HashMap<>();
+    private final Map<Path, List<TsvWord>> itemFinalCostWithDiscountLocations = new HashMap<>();
+    private final Map<Path, List<TsvWord>> itemDiscountLocations              = new HashMap<>();
+    private final Map<Path, List<TsvWord>> itemCountLocations                 = new HashMap<>();
+    private final Map<Path, List<TsvWord>> itemPricePerUnitLocations          = new HashMap<>();
+    private final Map<Path, List<TsvWord>> itemUnitsLocations                 = new HashMap<>();
 
 
     public void printStats() {
@@ -53,7 +53,7 @@ public class ParsingStatsCollector {
         log.info("\tX: {}", statsToString(xStat));
         log.info("\tEnd X: {}", statsToString(endXStat));
         log.info("\tWidth: {}", statsToString(widthStat));
-        
+
         log.info("\tY: {}", statsToString(yStat));
         log.info("\tEnd Y: {}", statsToString(endYStat));
         log.info("\tHeight: {}", statsToString(heightStat));
@@ -71,59 +71,59 @@ public class ParsingStatsCollector {
                 .summaryStatistics();
     }
 
-    public void collectShopNameLocation(File originalFile, TsvLine tsvLine) {
-        shopNameLocations.put(originalFile, tsvLine);
+    public void collectShopNameLocation(Path originalPath, TsvLine tsvLine) {
+        shopNameLocations.put(originalPath, tsvLine);
     }
 
-    public void collectCashRegisterNumberLocation(File originalFile, TsvLine tsvLine) {
-        cashRegisterNumberLocations.put(originalFile, tsvLine);
+    public void collectCashRegisterNumberLocation(Path originalPath, TsvLine tsvLine) {
+        cashRegisterNumberLocations.put(originalPath, tsvLine);
     }
 
-    public void collectTotalSavings(File originalFile, TsvWord tsvWord) {
-        totalSavingsLocations.put(originalFile, tsvWord);
+    public void collectTotalSavings(Path originalPath, TsvWord tsvWord) {
+        totalSavingsLocations.put(originalPath, tsvWord);
     }
 
-    public void collectShopBrandMoneyLocation(File originalFile, TsvWord tsvWord) {
-        brandMoneyLocations.put(originalFile, tsvWord);
+    public void collectShopBrandMoneyLocation(Path originalPath, TsvWord tsvWord) {
+        brandMoneyLocations.put(originalPath, tsvWord);
     }
 
-    public void collectDocumentNumberLocation(File originalFile, TsvLine line) {
-        documentNumberLocations.put(originalFile, line);
+    public void collectDocumentNumberLocation(Path originalPath, TsvLine line) {
+        documentNumberLocations.put(originalPath, line);
     }
 
-    public void collectItemFinalCostLocation(File originalFile, TsvWord tsvWord) {
+    public void collectItemFinalCostLocation(Path originalPath, TsvWord tsvWord) {
         itemFinalCostLocations
-                .computeIfAbsent(originalFile, k -> new ArrayList<>())
+                .computeIfAbsent(originalPath, k -> new ArrayList<>())
                 .add(tsvWord);
     }
 
-    public void collectItemDiscountLocation(File originalFile, TsvWord tsvWord) {
+    public void collectItemDiscountLocation(Path originalPath, TsvWord tsvWord) {
         itemDiscountLocations
-                .computeIfAbsent(originalFile, k -> new ArrayList<>())
+                .computeIfAbsent(originalPath, k -> new ArrayList<>())
                 .add(tsvWord);
     }
 
-    public void collectItemCountLocation(File originalFile, TsvWord tsvWord) {
+    public void collectItemCountLocation(Path originalPath, TsvWord tsvWord) {
         itemCountLocations
-                .computeIfAbsent(originalFile, k -> new ArrayList<>())
+                .computeIfAbsent(originalPath, k -> new ArrayList<>())
                 .add(tsvWord);
     }
 
-    public void collectPricePerUnitLocation(File originalFile, TsvWord tsvWord) {
+    public void collectPricePerUnitLocation(Path originalPath, TsvWord tsvWord) {
         itemPricePerUnitLocations
-                .computeIfAbsent(originalFile, k -> new ArrayList<>())
+                .computeIfAbsent(originalPath, k -> new ArrayList<>())
                 .add(tsvWord);
     }
 
-    public void collectItemUnitsLocation(File originalFile, TsvWord tsvWord) {
+    public void collectItemUnitsLocation(Path originalPath, TsvWord tsvWord) {
         itemUnitsLocations
-                .computeIfAbsent(originalFile, k -> new ArrayList<>())
+                .computeIfAbsent(originalPath, k -> new ArrayList<>())
                 .add(tsvWord);
     }
 
-    public void collectItemFinalCostWithDiscountLocation(File originalFile, TsvWord tsvWord) {
+    public void collectItemFinalCostWithDiscountLocation(Path originalPath, TsvWord tsvWord) {
         itemFinalCostWithDiscountLocations
-                .computeIfAbsent(originalFile, k -> new ArrayList<>())
+                .computeIfAbsent(originalPath, k -> new ArrayList<>())
                 .add(tsvWord);
     }
 }

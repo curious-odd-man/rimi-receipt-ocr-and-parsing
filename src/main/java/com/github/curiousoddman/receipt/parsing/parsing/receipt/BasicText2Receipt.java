@@ -1,12 +1,12 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt;
 
+import com.github.curiousoddman.receipt.parsing.model.MyLocalDateTime;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
 
 
@@ -49,7 +49,7 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
 
     protected abstract String getDocumentNumber(T context);
 
-    protected abstract LocalDateTime getReceiptDateTime(T context);
+    protected abstract MyLocalDateTime getReceiptDateTime(T context);
 
     protected abstract Collection<? extends ReceiptItem> getItems(T context);
 }

@@ -55,8 +55,8 @@ public class App implements ApplicationRunner {
         ParsingStatsCollector parsingStatsCollector = new ParsingStatsCollector();
         try (Stream<Path> files = Files.list(Paths.get("D:\\Programming\\git\\private-tools\\gmail-client\\output"))) {
             List<Path> allPdfFiles = files.filter(App::isPdfFile).toList();
-            for (Path file : allPdfFiles) {
-                String sourcePdfName = file.toFile().getName();
+            for (Path pdfFile : allPdfFiles) {
+                String sourcePdfName = pdfFile.toFile().getName();
                 MDC.put("file", sourcePdfName);
 
                 if (ignoreList.isIgnored(sourcePdfName)) {
@@ -69,16 +69,16 @@ public class App implements ApplicationRunner {
                     continue;
                 }
 
-                MyTessResult myTessResult = fileCache.getOrCreate(sourcePdfName, () -> pdf2Text.convert(file));
+                MyTessResult myTessResult = fileCache.getOrCreate(pdfFile, pdf2Text::convert);
                 TsvDocument tsvDocument = tsv2Struct.parseTsv(myTessResult.getTsvText());
                 myTessResult.setTsvDocument(tsvDocument);
-                fileCache.create(sourcePdfName + ".tsv.json", OBJECT_MAPPER.writeValueAsString(tsvDocument));
+                fileCache.create(Path.of(sourcePdfName + ".tsv.json"), OBJECT_MAPPER.writeValueAsString(tsvDocument));
                 Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, myTessResult, parsingStatsCollector);
                 if (optionalReceipt.isPresent()) {
                     Receipt receipt = optionalReceipt.get();
                     String receiptJson = OBJECT_MAPPER.writeValueAsString(receipt);
 
-                    fileCache.create(sourcePdfName + ".json", receiptJson);
+                    fileCache.create(Path.of(sourcePdfName + ".json"), receiptJson);
 
                     validationExecutor.execute(validationStatsCollector, receipt);
                 } else {

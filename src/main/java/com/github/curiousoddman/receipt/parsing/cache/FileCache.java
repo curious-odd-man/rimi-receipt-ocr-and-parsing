@@ -8,7 +8,10 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static com.github.curiousoddman.receipt.parsing.tess.MyTesseract.getImageFile;
 
 @Slf4j
 @Component
@@ -21,29 +24,37 @@ public class FileCache {
     }
 
     @SneakyThrows
-    public MyTessResult getOrCreate(String identifier, Supplier<MyTessResult> valueSupplier) {
-        Path newRoot = getSubdirectoryPath(identifier);
-        Path textCacheFilePath = newRoot.resolve(identifier + ".txt");
-        Path tsvCacheFilePath = newRoot.resolve(identifier + ".tsv");
-        Path imageCacheFilePath = newRoot.resolve(identifier + ".tiff");
+    public MyTessResult getOrCreate(Path pdfFile, Function<Path, MyTessResult> valueSupplier) {
+        Path pdfFileName = pdfFile.getFileName();
+        Path newRoot = getSubdirectoryPath(pdfFile);
+        Path textCacheFilePath = newRoot.resolve(pdfFileName + ".txt");
+        Path tsvCacheFilePath = newRoot.resolve(pdfFileName + ".tsv");
+        Path imageCacheFilePath = newRoot.resolve(pdfFileName + ".tiff");
         if (Files.exists(textCacheFilePath) && Files.exists(tsvCacheFilePath)) {
             return new MyTessResult(
-                    imageCacheFilePath.toFile(),
+                    pdfFile,
+                    imageCacheFilePath,
                     Files.readString(textCacheFilePath),
                     Files.readString(tsvCacheFilePath)
             );
         }
 
-        MyTessResult tessResult = valueSupplier.get();
+        if (!Files.exists(imageCacheFilePath)) {
+            File imageFile = getImageFile(pdfFile.toFile());
+            Files.copy(imageFile.toPath(), imageCacheFilePath);
+        }
+
+        MyTessResult tessResult = valueSupplier.apply(imageCacheFilePath);
         Files.writeString(textCacheFilePath, tessResult.getPlainText());
         Files.writeString(tsvCacheFilePath, tessResult.getTsvText());
         return tessResult;
     }
 
     @SneakyThrows
-    private static Path getSubdirectoryPath(String identifier) {
-        int i = identifier.indexOf('.');
-        String dirName = identifier.substring(0, i);
+    private static Path getSubdirectoryPath(Path pdfFile) {
+        String fileName = pdfFile.toFile().getName();
+        int i = fileName.indexOf('.');
+        String dirName = fileName.substring(0, i);
         Path newRoot = CACHE_ROOT.resolve(dirName);
         if (!Files.exists(newRoot)) {
             Files.createDirectories(newRoot);
@@ -53,9 +64,9 @@ public class FileCache {
 
 
     @SneakyThrows
-    public File getOrCreateFile(String identifier, Supplier<File> valueSupplier) {
-        Path newRoot = getSubdirectoryPath(identifier);
-        Path cacheFilePath = newRoot.resolve(identifier);
+    public File getOrCreateFile(Path pdfFile, Supplier<File> valueSupplier) {
+        Path newRoot = getSubdirectoryPath(pdfFile);
+        Path cacheFilePath = newRoot.resolve(pdfFile);
         if (Files.exists(cacheFilePath)) {
             return cacheFilePath.toFile();
         }
@@ -66,9 +77,9 @@ public class FileCache {
     }
 
     @SneakyThrows
-    public void create(String identifier, String contents) {
-        Path newRoot = getSubdirectoryPath(identifier);
-        Path cacheFilePath = newRoot.resolve(identifier);
+    public void create(Path pdfFile, String contents) {
+        Path newRoot = getSubdirectoryPath(pdfFile);
+        Path cacheFilePath = newRoot.resolve(pdfFile);
         Files.writeString(cacheFilePath, contents);
     }
 }

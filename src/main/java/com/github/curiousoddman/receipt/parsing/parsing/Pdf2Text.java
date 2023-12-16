@@ -17,6 +17,6 @@ public class Pdf2Text {
 
     @SneakyThrows
     public MyTessResult convert(Path path) {
-        return tesseract.doMyOCR(path.toFile());
+        return tesseract.doMyOCR(path);
     }
 }
