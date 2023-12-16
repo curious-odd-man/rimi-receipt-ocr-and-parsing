@@ -20,6 +20,8 @@ public class Whitelist {
         whiltelist = Files
                 .readAllLines(ignoreListPath)
                 .stream()
+                .filter(line -> !line.startsWith("#"))
+                .filter(line -> !line.isBlank())
                 .map(line -> line.split(" +")[0])
                 .collect(Collectors.toUnmodifiableSet());
     }
