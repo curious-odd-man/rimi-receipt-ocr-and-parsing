@@ -25,18 +25,18 @@ public class ParsingStatsCollector {
 
 
     public void printStats() {
-        printAllStats("Shop Name Locations", shopNameLocations.values());
-        printAllStats("Cash Register Number Locations", cashRegisterNumberLocations.values());
-        printAllStats("Total Savings Locations", totalSavingsLocations.values());
-        printAllStats("Brand Money Locations", brandMoneyLocations.values());
-        printAllStats("Document number Locations", documentNumberLocations.values());
-
-        printAllStats("Item Final Cost Locations", itemFinalCostLocations.values().stream().flatMap(Collection::stream).toList());
-        printAllStats("Item Final Cost with discount Locations", itemFinalCostWithDiscountLocations.values().stream().flatMap(Collection::stream).toList());
-        printAllStats("Item Discount Locations", itemDiscountLocations.values().stream().flatMap(Collection::stream).toList());
-        printAllStats("Item Count Locations", itemCountLocations.values().stream().flatMap(Collection::stream).toList());
-        printAllStats("Item Price per unit Locations", itemPricePerUnitLocations.values().stream().flatMap(Collection::stream).toList());
-        printAllStats("Item units Locations", itemUnitsLocations.values().stream().flatMap(Collection::stream).toList());
+//        printAllStats("Shop Name Locations", shopNameLocations.values());
+//        printAllStats("Cash Register Number Locations", cashRegisterNumberLocations.values());
+//        printAllStats("Total Savings Locations", totalSavingsLocations.values());
+//        printAllStats("Brand Money Locations", brandMoneyLocations.values());
+//        printAllStats("Document number Locations", documentNumberLocations.values());
+//
+//        printAllStats("Item Final Cost Locations", itemFinalCostLocations.values().stream().flatMap(Collection::stream).toList());
+//        printAllStats("Item Final Cost with discount Locations", itemFinalCostWithDiscountLocations.values().stream().flatMap(Collection::stream).toList());
+//        printAllStats("Item Discount Locations", itemDiscountLocations.values().stream().flatMap(Collection::stream).toList());
+//        printAllStats("Item Count Locations", itemCountLocations.values().stream().flatMap(Collection::stream).toList());
+//        printAllStats("Item Price per unit Locations", itemPricePerUnitLocations.values().stream().flatMap(Collection::stream).toList());
+//        printAllStats("Item units Locations", itemUnitsLocations.values().stream().flatMap(Collection::stream).toList());
     }
 
     private static void printAllStats(String header, Collection<? extends Positioned> values) {
