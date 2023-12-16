@@ -13,7 +13,6 @@ public class ValidationStatsCollector {
     public void recordSuccess(Receipt receipt) {
         successes += 1;
         reportStats();
-        log.info("No validation errors for file {}", receipt.getFileName());
     }
 
     public void recordFailure(Receipt receipt, List<ValidationResult> validationResult) {
