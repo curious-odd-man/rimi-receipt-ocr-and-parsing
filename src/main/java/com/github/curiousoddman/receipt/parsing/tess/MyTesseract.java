@@ -1,6 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.tess;
 
 import com.github.curiousoddman.receipt.parsing.cache.FileCache;
+import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.sun.jna.Pointer;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -25,16 +26,12 @@ import java.util.Properties;
 @Slf4j
 @Component
 public class MyTesseract extends Tesseract {
-
-    private final FileCache fileCache;
-
     public MyTesseract(FileCache fileCache) {
         setDatapath("D:\\Programming\\git\\private-tools\\receipts-parsing\\tes");
         setLanguage("lav");
-        this.fileCache = fileCache;
     }
 
-    public MyTessResult doMyOCR(OcrConfig ocrConfig) throws TesseractException {
+    public MyTessResult doMyOCR(OcrConfig ocrConfig, OriginFile originFile) throws TesseractException {
         try {
             ocrConfig.apply(this);
             File tiffFile = ocrConfig.getTiffFile().toFile();
@@ -64,8 +61,7 @@ public class MyTesseract extends Tesseract {
             }
 
             return new MyTessResult(
-                    ocrConfig.getPdfFile(),
-                    ocrConfig.getTiffFile(),
+                    originFile,
                     plainTextResult.toString(),
                     tsvTextResult.toString()
             );

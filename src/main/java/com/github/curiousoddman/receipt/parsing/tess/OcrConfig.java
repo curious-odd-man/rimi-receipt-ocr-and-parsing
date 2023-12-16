@@ -13,7 +13,6 @@ import static net.sourceforge.tess4j.ITessAPI.TessPageSegMode.PSM_AUTO_OSD;
 @Builder(builderMethodName = "hiddenBuilder")
 @Getter
 public class OcrConfig {
-    private final Path      pdfFile;
     private final Path      tiffFile;
     private final Rectangle ocrArea;
     @Builder.Default
@@ -25,8 +24,8 @@ public class OcrConfig {
     @Builder.Default
     private final int       ocrEngineMode = OEM_LSTM_ONLY;
 
-    public static OcrConfigBuilder builder(Path pdfFile, Path tiffFile) {
-        return hiddenBuilder().pdfFile(pdfFile).tiffFile(tiffFile);
+    public static OcrConfigBuilder builder(Path tiffFile) {
+        return hiddenBuilder().tiffFile(tiffFile);
     }
 
     public void apply(MyTesseract myTesseract) {

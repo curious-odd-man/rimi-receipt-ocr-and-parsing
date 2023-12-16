@@ -6,23 +6,19 @@ import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import com.github.curiousoddman.receipt.parsing.parsing.LocationCorrection;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.BasicText2Receipt;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvLine;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
 import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
-import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
 import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.sourceforge.tess4j.TesseractException;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
 
-import java.awt.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,8 +45,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     @Override
     protected RimiContext getContext(MyTessResult tessResult, ParsingStatsCollector parsingStatsCollector) {
         return new RimiContext(
-                tessResult.getInputFile(),
-                tessResult.getTiffFile(),
+                tessResult.getOriginFile(),
                 tessResult.getTsvDocument(),
                 parsingStatsCollector
         );
@@ -238,88 +233,17 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                                           RimiContext context,
                                           Consumer<TsvWord> tsvWordConsumer,
                                           LocationCorrection locationCorrection) {
-        List<String> values = new ArrayList<>();
-        String value = originalWord.getText();
-        // First attempt to parse big decimal as is
-        if (validateFormat(expectedFormat, value)) {
-            tsvWordConsumer.accept(originalWord);
-            return ConversionUtils.getReceiptNumber(value);
-        }
-        values.add(value);
-        String text;
-        Rectangle originalWordRectangle = originalWord.getWordRect();
-        try {
-            OcrConfig ocrConfig = OcrConfig
-                    .builder(context.getOriginalFile(), context.getTiffFile())
-                    .ocrDigitsOnly(true)
-                    .build();
-            // Next try to re-ocr the word itself
-            text = tesseract.doOCR(ocrConfig);
-            if (validateFormat(expectedFormat, text)) {
-                tsvWordConsumer.accept(originalWord);
-                return ConversionUtils.getReceiptNumber(text);
-            }
-        } catch (TesseractException ex) {
-            return new MyBigDecimal(null, null, ex.getMessage());
-        }
 
-        values.add(text);
-        TsvLine line;
-        try {
-            OcrConfig ocrConfig = OcrConfig
-                    .builder(context.getOriginalFile(), context.getTiffFile())
-                    .ocrArea(originalWord.getParentLine().getRectangle())
-                    .ocrToTsv(true)
-                    .build();
-            // Finally try to re-ocr whole line and get the word by the same word num.
-            String tsvText = tesseract.doOCR(ocrConfig);
-            TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
-            line = tsvDocument.getLines().get(0);
-            Optional<TsvWord> wordByWordNum = line.getWordByWordNum(originalWord.getWordNum());
-            if (wordByWordNum.isPresent()) {
-                TsvWord tsvWord = wordByWordNum.get();
-                text = tsvWord.getText();
-                if (validateFormat(expectedFormat, text)) {
-                    tsvWordConsumer.accept(tsvWord);
-                    return ConversionUtils.getReceiptNumber(text);
-                }
-            }
-        } catch (Exception ex) {
-            return new MyBigDecimal(null, null, ex.getMessage());
-        }
+        ReceiptNumberExtractionChain receiptNumberExtractionChain = new ReceiptNumberExtractionChain(
+                expectedFormat,
+                context,
+                tsvWordConsumer,
+                locationCorrection,
+                tesseract,
+                tsv2Struct
+        );
 
-        values.add("word by index " + originalWord.getWordNum() + " from line " + line.getText());
-        if (locationCorrection != NO_CORRECTION) {
-            // Additionally try to re-ocr by expected location based on statistics in locations-stats.txt
-            Rectangle correctedLocation = locationCorrection.getCorrectedLocation(originalWordRectangle);
-            try {
-                OcrConfig ocrConfig = OcrConfig
-                        .builder(context.getOriginalFile(), context.getTiffFile())
-                        .ocrArea(correctedLocation)
-                        .ocrDigitsOnly(true)
-                        .build();
-                text = tesseract.doOCR(ocrConfig);
-                if (validateFormat(expectedFormat, text)) {
-                    tsvWordConsumer.accept(originalWord);
-                    return ConversionUtils.getReceiptNumber(text);
-                }
-            } catch (TesseractException ex) {
-                return new MyBigDecimal(null, null, ex.getMessage());
-            }
-
-            values.add("number by corrected location: " + text);
-        }
-        return new MyBigDecimal(null, null, "Value none of '" + values + "' does match expected format: " + expectedFormat.pattern());
-    }
-
-    private static boolean validateFormat(Pattern expectedFormat, String value) {
-        String replaced = value
-                .replace("\r", "")
-                .replace("\n", "")
-                .replace(',', '.');
-        return expectedFormat
-                .matcher(replaced)
-                .matches();
+        return receiptNumberExtractionChain.parse(originalWord);
     }
 
 //    private ReceiptItem tryOcrNumbersAgain(RimiContext context, ReceiptItem item) {

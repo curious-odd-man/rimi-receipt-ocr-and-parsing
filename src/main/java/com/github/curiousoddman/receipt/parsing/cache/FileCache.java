@@ -1,5 +1,6 @@
 package com.github.curiousoddman.receipt.parsing.cache;
 
+import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.github.curiousoddman.receipt.parsing.opencv.OpenCvUtils;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import static com.github.curiousoddman.receipt.parsing.tess.MyTesseract.getImageFile;
 
@@ -25,16 +26,17 @@ public class FileCache {
     }
 
     @SneakyThrows
-    public MyTessResult getOrCreate(Path pdfFile, Function<OcrConfig, MyTessResult> valueSupplier) {
+    public MyTessResult getOrCreate(Path pdfFile, BiFunction<OcrConfig, OriginFile, MyTessResult> valueSupplier) {
         Path pdfFileName = pdfFile.getFileName();
         Path newRoot = getSubdirectoryPath(pdfFile);
         Path textCacheFilePath = newRoot.resolve(pdfFileName + ".txt");
         Path tsvCacheFilePath = newRoot.resolve(pdfFileName + ".tsv");
         Path imageCacheFilePath = newRoot.resolve(pdfFileName + ".tiff");
+        Path preprocessedImagePath = newRoot.resolve(pdfFileName + ".preprocessed.tiff");
+        OriginFile originFile = new OriginFile(pdfFile, imageCacheFilePath, preprocessedImagePath);
         if (Files.exists(textCacheFilePath) && Files.exists(tsvCacheFilePath)) {
             return new MyTessResult(
-                    pdfFile,
-                    imageCacheFilePath,
+                    originFile,
                     Files.readString(textCacheFilePath),
                     Files.readString(tsvCacheFilePath)
             );
@@ -45,13 +47,13 @@ public class FileCache {
             Files.copy(imageFile.toPath(), imageCacheFilePath);
         }
 
-        Path preprocessedImagePath = newRoot.resolve(pdfFileName + ".preprocessed.tiff");
 
         if (!Files.exists(preprocessedImagePath)) {
             OpenCvUtils.doImagePreprocessing(imageCacheFilePath, preprocessedImagePath);
         }
 
-        MyTessResult tessResult = valueSupplier.apply(OcrConfig.builder(pdfFile, preprocessedImagePath).build());
+        OcrConfig ocrConfig = OcrConfig.builder(originFile.preprocessedTiff()).build();
+        MyTessResult tessResult = valueSupplier.apply(ocrConfig, originFile);
         Files.writeString(textCacheFilePath, tessResult.getPlainText());
         Files.writeString(tsvCacheFilePath, tessResult.getTsvText());
         return tessResult;
