@@ -45,6 +45,7 @@ public class App implements ApplicationRunner {
     private final        List<Text2Receipt> text2ReceiptList;
     private final        FileCache          fileCache;
     private final        IgnoreList         ignoreList;
+    private final        Whitelist          whitelist;
     private final        ValidationExecutor validationExecutor;
     private final        Tsv2Struct         tsv2Struct;
 
@@ -57,9 +58,17 @@ public class App implements ApplicationRunner {
             for (Path file : allPdfFiles) {
                 String sourcePdfName = file.toFile().getName();
                 MDC.put("file", sourcePdfName);
+
                 if (ignoreList.isIgnored(sourcePdfName)) {
+                    log.info("Skipping file {} due to ignore list", sourcePdfName);
                     continue;
                 }
+
+                if (!whitelist.isWhitelisted(sourcePdfName)) {
+                    log.info("Skipping file {} due to non empty whitelist", sourcePdfName);
+                    continue;
+                }
+
                 MyTessResult myTessResult = fileCache.getOrCreate(sourcePdfName, () -> pdf2Text.convert(file));
                 TsvDocument tsvDocument = tsv2Struct.parseTsv(myTessResult.getTsvText());
                 myTessResult.setTsvDocument(tsvDocument);
