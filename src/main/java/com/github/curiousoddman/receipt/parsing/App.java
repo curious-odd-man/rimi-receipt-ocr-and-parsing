@@ -65,7 +65,6 @@ public class App implements ApplicationRunner {
                 }
 
                 if (!whitelist.isWhitelisted(sourcePdfName)) {
-                    log.info("Skipping file {} due to non empty whitelist", sourcePdfName);
                     continue;
                 }
 

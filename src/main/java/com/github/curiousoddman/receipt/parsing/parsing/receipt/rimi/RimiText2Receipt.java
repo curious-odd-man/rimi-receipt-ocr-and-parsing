@@ -207,7 +207,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         MyBigDecimal finalCost;
         MyBigDecimal discount = RECEIPT_NUMBER_ZERO;
         if (discountLine != null) {
-            finalCost = getReceiptNumber(discountLine.getWordByWordNum(5), MONEY_AMOUNT, context, context::collectItemFinalCostWithDiscountLocation, NO_CORRECTION);
+            finalCost = getReceiptNumber(discountLine.getWordByIndex(-1), MONEY_AMOUNT, context, context::collectItemFinalCostWithDiscountLocation, NO_CORRECTION);
             discount = getReceiptNumber(discountLine.getWordByWordNum(2), MONEY_AMOUNT, context, context::collectItemDiscountLocation, NO_CORRECTION);
         } else {
             Optional<TsvWord> finalCostGroupValue = priceLine.getWordByWordNum(6);

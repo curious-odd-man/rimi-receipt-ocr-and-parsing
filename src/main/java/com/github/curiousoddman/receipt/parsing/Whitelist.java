@@ -2,6 +2,7 @@ package com.github.curiousoddman.receipt.parsing;
 
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
@@ -9,6 +10,8 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
+@Slf4j
 @Component
 public class Whitelist {
 
@@ -24,6 +27,14 @@ public class Whitelist {
                 .filter(line -> !line.isBlank())
                 .map(line -> line.split(" +")[0])
                 .collect(Collectors.toUnmodifiableSet());
+
+        if (!whiltelist.isEmpty()) {
+            log.warn("Whitelist is not empty. Running only:");
+            for (String s : whiltelist) {
+                log.warn("\t{}", s);
+            }
+            log.warn("=-----=");
+        }
     }
 
     public boolean isWhitelisted(String fileName) {
