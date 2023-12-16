@@ -1,6 +1,8 @@
 package com.github.curiousoddman.receipt.parsing.cache;
 
+import com.github.curiousoddman.receipt.parsing.opencv.OpenCvUtils;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
+import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -23,7 +25,7 @@ public class FileCache {
     }
 
     @SneakyThrows
-    public MyTessResult getOrCreate(Path pdfFile, Function<Path, MyTessResult> valueSupplier) {
+    public MyTessResult getOrCreate(Path pdfFile, Function<OcrConfig, MyTessResult> valueSupplier) {
         Path pdfFileName = pdfFile.getFileName();
         Path newRoot = getSubdirectoryPath(pdfFile);
         Path textCacheFilePath = newRoot.resolve(pdfFileName + ".txt");
@@ -43,7 +45,13 @@ public class FileCache {
             Files.copy(imageFile.toPath(), imageCacheFilePath);
         }
 
-        MyTessResult tessResult = valueSupplier.apply(imageCacheFilePath);
+        Path preprocessedImagePath = newRoot.resolve(pdfFileName + ".preprocessed.tiff");
+
+        if (!Files.exists(preprocessedImagePath)) {
+            OpenCvUtils.doImagePreprocessing(imageCacheFilePath, preprocessedImagePath);
+        }
+
+        MyTessResult tessResult = valueSupplier.apply(OcrConfig.builder(pdfFile, preprocessedImagePath).build());
         Files.writeString(textCacheFilePath, tessResult.getPlainText());
         Files.writeString(tsvCacheFilePath, tessResult.getTsvText());
         return tessResult;

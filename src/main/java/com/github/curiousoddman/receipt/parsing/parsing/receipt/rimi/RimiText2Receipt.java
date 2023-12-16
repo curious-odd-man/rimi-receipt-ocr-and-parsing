@@ -12,6 +12,7 @@ import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
 import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
+import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
 import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
 import lombok.Data;
@@ -62,10 +63,15 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected String getShopName(RimiContext context) {
-        List<TsvLine> lineContaining = context.getNextLinesAfterMatching(JUR_ADDR, 1);
-        TsvLine tsvLine = lineContaining.get(0);
-        context.collectShopNameLocation(tsvLine);
-        return tsvLine.getText();
+        try {
+            List<TsvLine> lineContaining = context.getNextLinesAfterMatching(JUR_ADDR, 1);
+            TsvLine tsvLine = lineContaining.get(0);
+            context.collectShopNameLocation(tsvLine);
+            return tsvLine.getText();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return e.getMessage();
+        }
     }
 
     @Override
@@ -243,8 +249,12 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         String text;
         Rectangle originalWordRectangle = originalWord.getWordRect();
         try {
+            OcrConfig ocrConfig = OcrConfig
+                    .builder(context.getOriginalFile(), context.getTiffFile())
+                    .ocrDigitsOnly(true)
+                    .build();
             // Next try to re-ocr the word itself
-            text = tesseract.doOCR(context.getTiffFile(), originalWordRectangle, false, true);
+            text = tesseract.doOCR(ocrConfig);
             if (validateFormat(expectedFormat, text)) {
                 tsvWordConsumer.accept(originalWord);
                 return ConversionUtils.getReceiptNumber(text);
@@ -256,8 +266,13 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         values.add(text);
         TsvLine line;
         try {
+            OcrConfig ocrConfig = OcrConfig
+                    .builder(context.getOriginalFile(), context.getTiffFile())
+                    .ocrArea(originalWord.getParentLine().getRectangle())
+                    .ocrToTsv(true)
+                    .build();
             // Finally try to re-ocr whole line and get the word by the same word num.
-            String tsvText = tesseract.doOCR(context.getTiffFile(), originalWord.getParentLine().getRectangle(), true, false);
+            String tsvText = tesseract.doOCR(ocrConfig);
             TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
             line = tsvDocument.getLines().get(0);
             Optional<TsvWord> wordByWordNum = line.getWordByWordNum(originalWord.getWordNum());
@@ -278,7 +293,12 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
             // Additionally try to re-ocr by expected location based on statistics in locations-stats.txt
             Rectangle correctedLocation = locationCorrection.getCorrectedLocation(originalWordRectangle);
             try {
-                text = tesseract.doOCR(context.getTiffFile(), correctedLocation, false, true);
+                OcrConfig ocrConfig = OcrConfig
+                        .builder(context.getOriginalFile(), context.getTiffFile())
+                        .ocrArea(correctedLocation)
+                        .ocrDigitsOnly(true)
+                        .build();
+                text = tesseract.doOCR(ocrConfig);
                 if (validateFormat(expectedFormat, text)) {
                     tsvWordConsumer.accept(originalWord);
                     return ConversionUtils.getReceiptNumber(text);

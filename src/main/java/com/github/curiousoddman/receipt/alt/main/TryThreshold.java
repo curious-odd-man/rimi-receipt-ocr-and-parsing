@@ -10,16 +10,16 @@ import java.nio.file.Path;
 import static com.github.curiousoddman.receipt.parsing.opencv.OpenCvUtils.loadImage;
 import static com.github.curiousoddman.receipt.parsing.opencv.OpenCvUtils.saveImage;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_GRAYSCALE;
-import static org.opencv.imgproc.Imgproc.THRESH_BINARY;
+import static org.opencv.imgproc.Imgproc.*;
 
 @Slf4j
 public class TryThreshold {
     public static void main(String[] args) {
         OpenCV.loadLocally();
 
-        Path sourceTiff = Path.of("D:\\Programming\\git\\caches\\cache\\1-163972\\1-163972.pdf.tiff");
+        Path sourceTiff = Path.of("D:\\Programming\\git\\caches\\cache\\3-311743\\3-311743.pdf.tiff");
 
-        for (int i = 10; i < 250; i+=10) {
+        for (int i = 180; i < 200; i+=2) {
             Path targetImage = Path.of("D:\\Programming\\git\\caches\\cache\\test\\").resolve(sourceTiff.getFileName() + "." + i + ".tiff");
             Mat sourceMat = loadImage(sourceTiff.toAbsolutePath().toString(), IMREAD_GRAYSCALE);
             //saveImage(sourceMat, imagePath + ".grayscale.tiff");
@@ -29,7 +29,7 @@ public class TryThreshold {
                               i,
                               255,
                               THRESH_BINARY);
-//        Imgproc.adaptiveThreshold(sourceMat,
+//        Imgproc.adaptiveThreshold(dstMat,
 //                                  dstMat,
 //                                  255,
 //                                  ADAPTIVE_THRESH_MEAN_C,
