@@ -142,6 +142,9 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     protected Collection<? extends ReceiptItem> getItems(RimiContext context) {
         List<ReceiptItem> items = new ArrayList<>();
         List<TsvLine> linesBetween = context.getLinesBetween("KLIENTS:", "Maksājumu karte");
+        if (linesBetween.isEmpty()) {
+            linesBetween = context.getLinesBetween("XXXXXXXXXXXXXXX3991", "Maksājumu karte");
+        }
         linesBetween.add(TsvLine.dummy("HackLineThatDoesNotMatchAnyPatternButLetsUsProcessLastItemInList"));
         List<String> itemNameBuilder = new ArrayList<>();
         TsvLine priceLine = null;
