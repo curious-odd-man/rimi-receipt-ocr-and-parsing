@@ -23,6 +23,7 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
                 .cashRegisterNumber(getCashRegisterNumber(context))
                 .totalSavings(getTotalSavings(context))
                 .totalPayment(getTotalPayment(context))
+                .usedShopBrandMoney(getUsedShopBrandMoney(context))
                 //.totalVat(getTotalVat(context))
                 .shopBrandMoneyAccumulated(getShopBrandMoneyAccumulated(context))
                 .documentNumber(getDocumentNumber(context))
@@ -52,4 +53,6 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
     protected abstract MyLocalDateTime getReceiptDateTime(T context);
 
     protected abstract Collection<? extends ReceiptItem> getItems(T context);
+
+    protected abstract MyBigDecimal getUsedShopBrandMoney(T context);
 }

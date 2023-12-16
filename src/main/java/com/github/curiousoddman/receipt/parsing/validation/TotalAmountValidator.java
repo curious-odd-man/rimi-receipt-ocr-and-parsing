@@ -18,7 +18,14 @@ public class TotalAmountValidator implements ReceiptValidator {
                     receiptTotalPayment.errorText()
             ));
         }
-        BigDecimal totalPayment = receiptTotalPayment.value();
+
+        MyBigDecimal usedShopBrandMoney = receipt.getUsedShopBrandMoney();
+        if (usedShopBrandMoney.isError()) {
+            return new ValidationResult(getClass(), List.of(
+                    usedShopBrandMoney.errorText()
+            ));
+        }
+        BigDecimal totalPayment = receiptTotalPayment.value().add(usedShopBrandMoney.value());
         BigDecimal itemPriceSum = BigDecimal.ZERO;
         for (ReceiptItem item : receipt.getItems()) {
             MyBigDecimal finalCost = item.getFinalCost();

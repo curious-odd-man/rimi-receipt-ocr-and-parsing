@@ -183,6 +183,20 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         return items;
     }
 
+    @Override
+    protected MyBigDecimal getUsedShopBrandMoney(RimiContext context) {
+        Optional<TsvLine> lineMatching = context.getLineMatching(SHOP_BRAND_MONEY_SPENT, 0);
+        return lineMatching
+                .map(tsvLine -> getReceiptNumber(
+                        tsvLine.getWordByIndex(-1),
+                        NUMBER_PATTERN,
+                        context,
+                        tsvWord -> {
+                        },
+                        NO_CORRECTION
+                )).orElse(new MyBigDecimal(BigDecimal.ZERO, null, null));
+    }
+
     private ReceiptItem createItem(RimiContext context,
                                    TsvLine discountLine,
                                    TsvLine priceLine,

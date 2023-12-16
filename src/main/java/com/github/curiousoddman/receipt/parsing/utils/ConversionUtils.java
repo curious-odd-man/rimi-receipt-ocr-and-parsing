@@ -28,6 +28,14 @@ public class ConversionUtils {
         }
     }
 
+    public static MyBigDecimal getReceiptNumberOrThrow(String text) {
+        String cleanedInputText = text
+                .replace("\r", "")
+                .replace("\n", "")
+                .replace(',', '.');
+        return new MyBigDecimal(new BigDecimal(cleanedInputText), text, null);
+    }
+
     /**
      * Converts ONE of texts into BigDecimal value.
      *
@@ -48,7 +56,7 @@ public class ConversionUtils {
         for (List<String> values : frequencyToValuesMap.values()) {
             for (String value : values) {
                 try {
-                    return getReceiptNumber(value);
+                    return getReceiptNumberOrThrow(value);
                 } catch (Exception e) {
                     if (suppressed != null) {
                         e.addSuppressed(suppressed);

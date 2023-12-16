@@ -59,4 +59,6 @@ public class Patterns {
     public static final Pattern NUMBER_PATTERN = Pattern.compile(".*?-*?(-?\\d+)([.,\\s]+(\\d+))?.*");
 
     public static final Pattern NON_DIGITS = Pattern.compile("\\D+");
+
+    public static final Pattern SHOP_BRAND_MONEY_SPENT = Pattern.compile("Izmantot.\\s+Mans\\s+Rimi\\s+nauda.*");
 }

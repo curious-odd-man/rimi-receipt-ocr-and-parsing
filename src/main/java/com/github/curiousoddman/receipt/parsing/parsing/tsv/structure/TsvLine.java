@@ -53,6 +53,18 @@ public class TsvLine implements Positioned {
                 .findAny();
     }
 
+    public Optional<TsvWord> getWordByIndex(int index) {
+        try {
+            if (index > 0) {
+                return Optional.of(words.get(0));
+            } else {
+                return Optional.of(words.get(words.size() + index));
+            }
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     @JsonIgnore
     public Rectangle getRectangle() {
         return new Rectangle(x - 2,
