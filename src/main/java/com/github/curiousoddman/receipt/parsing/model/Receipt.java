@@ -16,10 +16,12 @@ public class Receipt {
     private MyBigDecimal    totalSavings;
     private MyBigDecimal    totalPayment;
     private MyBigDecimal    usedShopBrandMoney;
+    private MyBigDecimal    depositCouponPayment;
     //    private MyBigDecimal totalVat;
     private MyBigDecimal    shopBrandMoneyAccumulated;
     private String          documentNumber;
     private MyLocalDateTime receiptDateTime;
+    private List<Discount>  discounts;
 
     @Singular
     private List<ReceiptItem> items;

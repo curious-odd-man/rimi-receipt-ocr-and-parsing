@@ -1,5 +1,6 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
+import com.github.curiousoddman.receipt.parsing.model.Discount;
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.model.MyLocalDateTime;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
@@ -27,6 +28,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.github.curiousoddman.receipt.parsing.parsing.LocationCorrection.NO_CORRECTION;
 import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.parseDateTime;
@@ -41,6 +43,45 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     private final MyTesseract          tesseract;
     private final ItemNumbersValidator itemNumbersValidator;
     private final Tsv2Struct           tsv2Struct;
+
+    @Override
+    protected MyBigDecimal getDepositCouponPayment(RimiContext context) {
+        Optional<TsvLine> couponLine = context.getLineMatching(Pattern.compile("Depoz.ta\\s+kupons\\s+"), 0);
+        return couponLine
+                .map(tsvLine -> getReceiptNumber(tsvLine.getWordByIndex(-1),
+                                                 NUMBER_PATTERN,
+                                                 context,
+                                                 word -> {
+                                                 }, NO_CORRECTION
+                )).orElseGet(() -> new MyBigDecimal(BigDecimal.ZERO, null, null));
+    }
+
+    @Override
+    protected List<Discount> getDiscounts(RimiContext context) {
+        List<Discount> discounts = new ArrayList<>();
+        List<TsvLine> linesBetween = context.getLinesBetween("ATLAIDES", "Tavs ietaupījums");
+        List<TsvWord> discountNameBuilder = new ArrayList<>();
+        for (TsvLine tsvLine : linesBetween) {
+            List<TsvWord> words = new ArrayList<>(tsvLine.getWords());
+            TsvWord amountWord = words.get(words.size() - 1);
+            MyBigDecimal amountNumber = getReceiptNumber(amountWord,
+                                                         NUMBER_PATTERN,
+                                                         context,
+                                                         w -> {
+                                                         },
+                                                         NO_CORRECTION);
+            if (amountNumber.isError()) {
+                discountNameBuilder.addAll(tsvLine.getWords());
+            } else {
+                words.remove(words.size() - 1);
+                discountNameBuilder.addAll(words);
+                String name = discountNameBuilder.stream().map(TsvWord::getText).collect(Collectors.joining(" "));
+                discounts.add(new Discount(name, amountNumber));
+                discountNameBuilder.clear();
+            }
+        }
+        return discounts;
+    }
 
     @Override
     protected RimiContext getContext(MyTessResult tessResult, ParsingStatsCollector parsingStatsCollector) {

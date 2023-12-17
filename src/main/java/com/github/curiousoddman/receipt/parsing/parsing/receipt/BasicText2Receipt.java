@@ -1,13 +1,11 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt;
 
-import com.github.curiousoddman.receipt.parsing.model.MyLocalDateTime;
-import com.github.curiousoddman.receipt.parsing.model.Receipt;
-import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
-import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
+import com.github.curiousoddman.receipt.parsing.model.*;
 import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 
 import java.util.Collection;
+import java.util.List;
 
 
 public abstract class BasicText2Receipt<T extends Context> implements Text2Receipt {
@@ -28,9 +26,15 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
                 .shopBrandMoneyAccumulated(getShopBrandMoneyAccumulated(context))
                 .documentNumber(getDocumentNumber(context))
                 .receiptDateTime(getReceiptDateTime(context))
+                .discounts(getDiscounts(context))
+                .depositCouponPayment(getDepositCouponPayment(context))
                 .items(getItems(context))
                 .build();
     }
+
+    protected abstract MyBigDecimal getDepositCouponPayment(T context);
+
+    protected abstract List<Discount> getDiscounts(T context);
 
     protected abstract T getContext(MyTessResult text, ParsingStatsCollector parsingStatsCollector);
 

@@ -25,7 +25,17 @@ public class TotalAmountValidator implements ReceiptValidator {
                     usedShopBrandMoney.errorText()
             ));
         }
-        BigDecimal totalPayment = receiptTotalPayment.value().add(usedShopBrandMoney.value());
+
+        MyBigDecimal depositeCoupon = receipt.getDepositCouponPayment();
+        if (depositeCoupon.isError()) {
+            return new ValidationResult(getClass(), List.of(
+                    depositeCoupon.errorText()
+            ));
+        }
+
+        BigDecimal totalPayment = receiptTotalPayment.value()
+                                                     .add(usedShopBrandMoney.value())
+                                                     .subtract(depositeCoupon.value());
         BigDecimal itemPriceSum = BigDecimal.ZERO;
         for (ReceiptItem item : receipt.getItems()) {
             MyBigDecimal finalCost = item.getFinalCost();
