@@ -80,6 +80,9 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 discountNameBuilder.clear();
             }
         }
+        if (!discountNameBuilder.isEmpty()) {
+            log.error("Wrongly parsed discount lines");
+        }
         return discounts;
     }
 
