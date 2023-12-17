@@ -29,6 +29,7 @@ public class OcrConfig {
     }
 
     public void apply(MyTesseract myTesseract) {
+        myTesseract.setVariable("tessedit_char_blacklist", "_");
         if (ocrDigitsOnly) {
             myTesseract.setPageSegMode(ITessAPI.TessPageSegMode.PSM_RAW_LINE);
             myTesseract.setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_TESSERACT_ONLY);
