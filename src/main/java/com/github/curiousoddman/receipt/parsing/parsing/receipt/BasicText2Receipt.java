@@ -1,6 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt;
 
 import com.github.curiousoddman.receipt.parsing.model.*;
+import com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi.NumberOcrResult;
 import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 
@@ -27,12 +28,12 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
                 .documentNumber(getDocumentNumber(context))
                 .receiptDateTime(getReceiptDateTime(context))
                 .discounts(getDiscounts(context))
-                .depositCouponPayment(getDepositCouponPayment(context))
+                .depositCouponPayment(getDepositCouponPayment(context).getNumber())
                 .items(getItems(context))
                 .build();
     }
 
-    protected abstract MyBigDecimal getDepositCouponPayment(T context);
+    protected abstract NumberOcrResult getDepositCouponPayment(T context);
 
     protected abstract List<Discount> getDiscounts(T context);
 

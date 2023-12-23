@@ -68,6 +68,8 @@ public class App implements ApplicationRunner {
                     continue;
                 }
 
+                log.info("Starting...");
+
                 MyTessResult myTessResult = fileCache.getOrCreate(pdfFile, pdf2Text::convert);
                 TsvDocument tsvDocument = tsv2Struct.parseTsv(myTessResult.getTsvText());
                 myTessResult.setTsvDocument(tsvDocument);
