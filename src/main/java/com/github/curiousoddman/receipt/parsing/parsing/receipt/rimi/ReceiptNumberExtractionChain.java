@@ -43,6 +43,25 @@ public class ReceiptNumberExtractionChain {
         }
 
         triedValues.add("original: " + value);
+        return combineWithNextWord(originalWord);
+    }
+
+    private MyBigDecimal combineWithNextWord(TsvWord originalWord) {
+        String value = originalWord.getText();
+        // Sometimes there is extra space wrongly detected: -0, 36
+        // Try to combine those into one and use it as a value
+        TsvLine parentLine = originalWord.getParentLine();
+        Optional<TsvWord> wordByWordNum = parentLine.getWordByWordNum(originalWord.getWordNum() + 1);
+        if (wordByWordNum.isPresent()) {
+            String combinedWords = value + wordByWordNum.get().getText();
+            if (validateFormat(expectedFormat, combinedWords)) {
+                tsvWordConsumer.accept(originalWord);
+                return ConversionUtils.getReceiptNumber(combinedWords);
+            }
+
+            triedValues.add("original: " + combinedWords);
+        }
+
         return reOcrWordLocation(originalWord);
     }
 
