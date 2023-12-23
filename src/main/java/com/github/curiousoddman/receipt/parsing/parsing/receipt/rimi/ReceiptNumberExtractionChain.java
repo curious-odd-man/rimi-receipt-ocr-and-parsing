@@ -38,7 +38,7 @@ public class ReceiptNumberExtractionChain {
         // First attempt to parse big decimal as is
         if (validateFormat(expectedFormat, value)) {
             tsvWordConsumer.accept(originalWord);
-            return NumberOcrResult.of(ConversionUtils.getReceiptNumber(value), originalWord.getWordRect());
+            return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(value), originalWord.getWordRect());
         }
 
         triedValues.add("original: " + value);
@@ -59,7 +59,7 @@ public class ReceiptNumberExtractionChain {
                 Rectangle wordRect = new Rectangle(originalWord.getWordRect());
                 wordRect.add(tsvWord.getWordRect());
                 return NumberOcrResult.of(
-                        ConversionUtils.getReceiptNumber(combinedWords),
+                        ConversionUtils.toMyBigDecimal(combinedWords),
                         wordRect);
             }
 
@@ -81,7 +81,7 @@ public class ReceiptNumberExtractionChain {
             value = tesseract.doOCR(ocrConfig);
             if (validateFormat(expectedFormat, value)) {
                 tsvWordConsumer.accept(originalWord);
-                return NumberOcrResult.of(ConversionUtils.getReceiptNumber(value), originalWordRectangle);
+                return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(value), originalWordRectangle);
             }
         } catch (TesseractException ex) {
             log.error(ex.getMessage(), ex);
@@ -104,7 +104,7 @@ public class ReceiptNumberExtractionChain {
             value = tesseract.doOCR(ocrConfig);
             if (validateFormat(expectedFormat, value)) {
                 tsvWordConsumer.accept(originalWord);
-                return NumberOcrResult.of(ConversionUtils.getReceiptNumber(value), originalWordRectangle);
+                return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(value), originalWordRectangle);
             }
         } catch (TesseractException ex) {
             log.error(ex.getMessage(), ex);
@@ -142,7 +142,7 @@ public class ReceiptNumberExtractionChain {
                 text = tsvWord.getText();
                 if (validateFormat(expectedFormat, text)) {
                     tsvWordConsumer.accept(tsvWord);
-                    return NumberOcrResult.of(ConversionUtils.getReceiptNumber(text), tsvWord.getWordRect());
+                    return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(text), tsvWord.getWordRect());
                 }
             }
             triedValues.add("re-ocr line: idx=" + originalWord.getWordNum() + "; line=" + line.getText());
@@ -173,7 +173,7 @@ public class ReceiptNumberExtractionChain {
                 text = tsvWord.getText();
                 if (validateFormat(expectedFormat, text)) {
                     tsvWordConsumer.accept(tsvWord);
-                    return NumberOcrResult.of(ConversionUtils.getReceiptNumber(text), tsvWord.getWordRect());
+                    return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(text), tsvWord.getWordRect());
                 }
             }
             triedValues.add("re-ocr original file line: idx=" + originalWord.getWordNum() + "; line=" + line.getText());
@@ -199,7 +199,7 @@ public class ReceiptNumberExtractionChain {
                 text = tesseract.doOCR(ocrConfig);
                 if (validateFormat(expectedFormat, text)) {
                     tsvWordConsumer.accept(originalWord);
-                    return NumberOcrResult.of(ConversionUtils.getReceiptNumber(text), originalWordRectangle);
+                    return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(text), originalWordRectangle);
                 }
             } catch (TesseractException ex) {
                 triedValues.add(ex.getMessage());

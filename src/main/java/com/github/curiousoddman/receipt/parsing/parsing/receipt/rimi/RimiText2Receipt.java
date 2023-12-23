@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.github.curiousoddman.receipt.parsing.parsing.LocationCorrection.NO_CORRECTION;
-import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.getReceiptNumber;
+import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.toMyBigDecimal;
 import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.parseDateTime;
 import static com.github.curiousoddman.receipt.parsing.utils.Patterns.*;
 
@@ -138,7 +138,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         Optional<String> paymentAmount = getFirstGroup(context, PAYMENT_SUM);
         Optional<String> totalAmount = getFirstGroup(context, TOTAL_AMOUNT);
         Optional<String> bankCardAmount = getFirstGroup(context, BANK_CARD_AMOUNT);
-        return getReceiptNumber(
+        return toMyBigDecimal(
                 paymentAmount.orElse(null),
                 totalAmount.orElse(null),
                 bankCardAmount.orElse(null)
@@ -158,7 +158,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 return line
                         .getWordByWordNum(5)
                         .map(word -> {
-                            MyBigDecimal receiptNumber = getReceiptNumber(word.getText());
+                            MyBigDecimal receiptNumber = ConversionUtils.toMyBigDecimal(word.getText());
                             if (!receiptNumber.isError()) {
                                 context.collectShopBrandMoneyLocation(word);
                             }
@@ -325,7 +325,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 return receiptItemResult.getReceiptItem();
             }
             ReceiptItem itemCopy = receiptItemResult.getReceiptItem().toBuilder().build();
-            setter.accept(itemCopy, getReceiptNumber(newValue));
+            setter.accept(itemCopy, ConversionUtils.toMyBigDecimal(newValue));
             if (itemNumbersValidator.isItemValid(itemCopy)) {
                 return itemCopy;
             }

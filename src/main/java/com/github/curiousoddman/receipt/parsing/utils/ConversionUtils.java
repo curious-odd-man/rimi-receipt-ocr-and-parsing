@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.groupingBy;
 
 public class ConversionUtils {
 
-    public static MyBigDecimal getReceiptNumber(String text) {
+    public static MyBigDecimal toMyBigDecimal(String text) {
         String cleanedInputText = text
                 .replace("\r", "")
                 .replace("\n", "")
@@ -28,7 +28,7 @@ public class ConversionUtils {
         }
     }
 
-    public static MyBigDecimal getReceiptNumberOrThrow(String text) {
+    public static MyBigDecimal toMyBigDecimalOrThrow(String text) {
         String cleanedInputText = text
                 .replace("\r", "")
                 .replace("\n", "")
@@ -42,7 +42,7 @@ public class ConversionUtils {
      * @param texts input text values
      * @return BigDecimal value
      */
-    public static MyBigDecimal getReceiptNumber(String... texts) {
+    public static MyBigDecimal toMyBigDecimal(String... texts) {
         Map<String, Long> countsPerText = Arrays
                 .stream(texts)
                 .filter(Objects::nonNull)
@@ -56,7 +56,7 @@ public class ConversionUtils {
         for (List<String> values : frequencyToValuesMap.values()) {
             for (String value : values) {
                 try {
-                    return getReceiptNumberOrThrow(value);
+                    return toMyBigDecimalOrThrow(value);
                 } catch (Exception e) {
                     if (suppressed != null) {
                         e.addSuppressed(suppressed);
@@ -77,7 +77,7 @@ public class ConversionUtils {
         String[] splitByProperty = line.split(token);
         for (String s : splitByProperty) {
             if (!s.isBlank()) {
-                return Optional.of(getReceiptNumber(s));
+                return Optional.of(toMyBigDecimal(s));
             }
         }
         return Optional.empty();
