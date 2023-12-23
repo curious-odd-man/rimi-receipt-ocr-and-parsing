@@ -36,7 +36,7 @@ public class ReceiptNumberExtractionChain {
     public NumberOcrResult parse(TsvWord originalWord) {
         String value = originalWord.getText();
         // First attempt to parse big decimal as is
-        if (validateFormat(expectedFormat, value)) {
+        if (ConversionUtils.isFormatValid(expectedFormat, value)) {
             tsvWordConsumer.accept(originalWord);
             return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(value), originalWord.getWordRect());
         }
@@ -54,7 +54,7 @@ public class ReceiptNumberExtractionChain {
         if (wordByWordNum.isPresent()) {
             TsvWord tsvWord = wordByWordNum.get();
             String combinedWords = value + tsvWord.getText();
-            if (validateFormat(expectedFormat, combinedWords)) {
+            if (ConversionUtils.isFormatValid(expectedFormat, combinedWords)) {
                 tsvWordConsumer.accept(originalWord);
                 Rectangle wordRect = new Rectangle(originalWord.getWordRect());
                 wordRect.add(tsvWord.getWordRect());
@@ -79,7 +79,7 @@ public class ReceiptNumberExtractionChain {
                     .ocrArea(originalWordRectangle)
                     .build();
             value = tesseract.doOCR(ocrConfig);
-            if (validateFormat(expectedFormat, value)) {
+            if (ConversionUtils.isFormatValid(expectedFormat, value)) {
                 tsvWordConsumer.accept(originalWord);
                 return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(value), originalWordRectangle);
             }
@@ -102,7 +102,7 @@ public class ReceiptNumberExtractionChain {
                     .ocrArea(originalWordRectangle)
                     .build();
             value = tesseract.doOCR(ocrConfig);
-            if (validateFormat(expectedFormat, value)) {
+            if (ConversionUtils.isFormatValid(expectedFormat, value)) {
                 tsvWordConsumer.accept(originalWord);
                 return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(value), originalWordRectangle);
             }
@@ -140,7 +140,7 @@ public class ReceiptNumberExtractionChain {
             if (wordByWordNum.isPresent()) {
                 TsvWord tsvWord = wordByWordNum.get();
                 text = tsvWord.getText();
-                if (validateFormat(expectedFormat, text)) {
+                if (ConversionUtils.isFormatValid(expectedFormat, text)) {
                     tsvWordConsumer.accept(tsvWord);
                     return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(text), tsvWord.getWordRect());
                 }
@@ -171,7 +171,7 @@ public class ReceiptNumberExtractionChain {
             if (wordByWordNum.isPresent()) {
                 TsvWord tsvWord = wordByWordNum.get();
                 text = tsvWord.getText();
-                if (validateFormat(expectedFormat, text)) {
+                if (ConversionUtils.isFormatValid(expectedFormat, text)) {
                     tsvWordConsumer.accept(tsvWord);
                     return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(text), tsvWord.getWordRect());
                 }
@@ -197,7 +197,7 @@ public class ReceiptNumberExtractionChain {
                         .ocrDigitsOnly(true)
                         .build();
                 text = tesseract.doOCR(ocrConfig);
-                if (validateFormat(expectedFormat, text)) {
+                if (ConversionUtils.isFormatValid(expectedFormat, text)) {
                     tsvWordConsumer.accept(originalWord);
                     return NumberOcrResult.of(ConversionUtils.toMyBigDecimal(text), originalWordRectangle);
                 }
@@ -219,15 +219,5 @@ public class ReceiptNumberExtractionChain {
         }
         log.error("----------------------");
         return NumberOcrResult.ofError("Tried " + triedValues.size() + " different value. No one matches BigDecimal format.");
-    }
-
-    private static boolean validateFormat(Pattern expectedFormat, String value) {
-        String replaced = value
-                .replace("\r", "")
-                .replace("\n", "")
-                .replace(',', '.');
-        return expectedFormat
-                .matcher(replaced)
-                .matches();
     }
 }

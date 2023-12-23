@@ -1,9 +1,6 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
-import com.github.curiousoddman.receipt.parsing.model.Discount;
-import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
-import com.github.curiousoddman.receipt.parsing.model.MyLocalDateTime;
-import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
+import com.github.curiousoddman.receipt.parsing.model.*;
 import com.github.curiousoddman.receipt.parsing.parsing.LocationCorrection;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.BasicText2Receipt;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
@@ -15,6 +12,7 @@ import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
 import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
 import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
+import com.github.curiousoddman.receipt.parsing.validation.TotalAmountValidator;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -135,13 +133,15 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected MyBigDecimal getTotalPayment(RimiContext context) {
-        Optional<String> paymentAmount = getFirstGroup(context, PAYMENT_SUM);
-        Optional<String> totalAmount = getFirstGroup(context, TOTAL_AMOUNT);
-        Optional<String> bankCardAmount = getFirstGroup(context, BANK_CARD_AMOUNT);
+        Optional<TsvWord> paymentAmount = context.getLineMatching(PAYMENT_SUM, 0).flatMap(l -> l.getWordByIndex(-1));
+        Optional<TsvWord> totalAmount = context.getLineMatching(TOTAL_AMOUNT, 0).flatMap(l -> l.getWordByIndex(-2));
+        Optional<TsvWord> bankCardAmount = context.getLineMatching(BANK_CARD_AMOUNT, 0).flatMap(l -> l.getWordByIndex(-1));
+        context.setTotalAmountWords(paymentAmount, totalAmount, bankCardAmount);
         return toMyBigDecimal(
-                paymentAmount.orElse(null),
-                totalAmount.orElse(null),
-                bankCardAmount.orElse(null)
+                MONEY_AMOUNT,
+                paymentAmount.map(TsvWord::getText).orElse(null),
+                totalAmount.map(TsvWord::getText).orElse(null),
+                bankCardAmount.map(TsvWord::getText).orElse(null)
         );
     }
 
@@ -158,7 +158,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 return line
                         .getWordByWordNum(5)
                         .map(word -> {
-                            MyBigDecimal receiptNumber = ConversionUtils.toMyBigDecimal(word.getText());
+                            MyBigDecimal receiptNumber = toMyBigDecimal(word.getText());
                             if (!receiptNumber.isError()) {
                                 context.collectShopBrandMoneyLocation(word);
                             }
@@ -181,11 +181,11 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected MyLocalDateTime getReceiptDateTime(RimiContext context) {
-        Optional<String> firstGroup = getFirstGroup(context, RECEIPT_TIME_PATTERN);
-        if (firstGroup.isEmpty()) {
+        Optional<String> receiptTimeText = getFirstGroup(context, RECEIPT_TIME_PATTERN);
+        if (receiptTimeText.isEmpty()) {
             return new MyLocalDateTime(null, "", "Counld not locate group for date/time");
         }
-        return parseDateTime(firstGroup.orElseThrow());
+        return parseDateTime(receiptTimeText.orElseThrow());
     }
 
     @Override
@@ -275,7 +275,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 .orElseThrow();
         String unitsWord = unitsTsvWord.getText();
         context.collectItemUnitsLocation(unitsTsvWord);
-        NumberOcrResult countOcrResult = getNumberFromReceipt(countText, unitsWord.toLowerCase().equals("gab") ? INTEGER : WEIGHT, context, context::collectItemCountLocation, NO_CORRECTION);
+        NumberOcrResult countOcrResult = getNumberFromReceipt(countText, unitsWord.equalsIgnoreCase("gab") ? INTEGER : WEIGHT, context, context::collectItemCountLocation, NO_CORRECTION);
         NumberOcrResult pricePerUnitOcrResult = getNumberFromReceipt(pricePerUnitText, MONEY_AMOUNT, context, context::collectPricePerUnitLocation, NO_CORRECTION);
         ReceiptItem item = ReceiptItem
                 .builder()
@@ -325,7 +325,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 return receiptItemResult.getReceiptItem();
             }
             ReceiptItem itemCopy = receiptItemResult.getReceiptItem().toBuilder().build();
-            setter.accept(itemCopy, ConversionUtils.toMyBigDecimal(newValue));
+            setter.accept(itemCopy, toMyBigDecimal(newValue));
             if (itemNumbersValidator.isItemValid(itemCopy)) {
                 return itemCopy;
             }

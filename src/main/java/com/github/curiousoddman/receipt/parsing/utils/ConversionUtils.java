@@ -42,10 +42,11 @@ public class ConversionUtils {
      * @param texts input text values
      * @return BigDecimal value
      */
-    public static MyBigDecimal toMyBigDecimal(String... texts) {
+    public static MyBigDecimal toMyBigDecimal(Pattern expectedFormat, String... texts) {
         Map<String, Long> countsPerText = Arrays
                 .stream(texts)
                 .filter(Objects::nonNull)
+                .filter(text -> isFormatValid(expectedFormat, text))
                 .collect(groupingBy(t -> t, counting()));
 
         TreeMap<Long, List<String>> frequencyToValuesMap = new TreeMap<>(Comparator.reverseOrder());
@@ -110,5 +111,15 @@ public class ConversionUtils {
                     e.getMessage()
             );
         }
+    }
+
+    public static boolean isFormatValid(Pattern expectedFormat, String value) {
+        String replaced = value
+                .replace("\r", "")
+                .replace("\n", "")
+                .replace(',', '.');
+        return expectedFormat
+                .matcher(replaced)
+                .matches();
     }
 }

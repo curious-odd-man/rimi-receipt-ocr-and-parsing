@@ -22,6 +22,9 @@ public class RimiContext implements Context {
     private final TsvDocument           tsvDocument;
     private final ParsingStatsCollector parsingStatsCollector;
 
+    private Optional<TsvWord> paymentAmount;
+    private Optional<TsvWord> totalAmount;
+    private Optional<TsvWord> bankCardAmount;
 
     public TsvLine getLineContaining(String text, int index) {
         List<TsvLine> linesContaining = getLinesContaining(text);
@@ -139,5 +142,11 @@ public class RimiContext implements Context {
 
     public void collectItemFinalCostWithDiscountLocation(TsvWord tsvWord) {
         parsingStatsCollector.collectItemFinalCostWithDiscountLocation(originFile, tsvWord);
+    }
+
+    public void setTotalAmountWords(Optional<TsvWord> paymentAmount, Optional<TsvWord> totalAmount, Optional<TsvWord> bankCardAmount) {
+        setPaymentAmount(paymentAmount);
+        setTotalAmount(totalAmount);
+        setBankCardAmount(bankCardAmount);
     }
 }
