@@ -35,6 +35,7 @@ import static com.github.curiousoddman.receipt.parsing.parsing.LocationCorrectio
 import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.parseDateTime;
 import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.toMyBigDecimal;
 import static com.github.curiousoddman.receipt.parsing.utils.Patterns.*;
+import static java.util.Objects.requireNonNullElse;
 
 @Slf4j
 @Component
@@ -47,6 +48,70 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     private final Tsv2Struct           tsv2Struct;
     private final ItemNumbersValidator itemNumbersValidator;
     private final TotalAmountValidator totalAmountValidator;
+
+    @Override
+    protected Map<String, MyBigDecimal> getPaymentMethods(RimiContext context) {
+        Map<String, MyBigDecimal> result = new LinkedHashMap<>();
+
+        // Deposit coupon
+        Optional<TsvLine> couponLine = context.getLineMatching(DEPOZIT_COUNPON_LINE, 0);
+        couponLine
+                .flatMap(tsvLine -> tsvLine.getWordByIndex(-1))
+                .map(word -> getNumberFromReceipt(word,
+                                                  NUMBER_PATTERN,
+                                                  context,
+                                                  NOOP_CONSUMER,
+                                                  NO_CORRECTION
+                ))
+                .map(NumberOcrResult::getNumber)
+                .ifPresent(amount -> result.put(Constants.DEPOSIT_COUPON, amount));
+
+
+        // Bank card amount
+        MyBigDecimal bankCardTotalAmount = context
+                .getLineMatching(TOTAL_CARD_AMOUNT, 0)
+                .flatMap(l -> l.getWordByIndex(-2))
+                .map(word -> getNumberFromReceipt(word,
+                                                  NUMBER_PATTERN,
+                                                  context,
+                                                  NOOP_CONSUMER,
+                                                  NO_CORRECTION))
+                .map(NumberOcrResult::getNumber)
+                .orElse(null);
+
+        MyBigDecimal bankCardAmount = context
+                .getLineMatching(BANK_CARD_PAYMENT_AMOUNT, 0)
+                .flatMap(l -> l.getWordByIndex(-1))
+                .map(word -> getNumberFromReceipt(word,
+                                                  NUMBER_PATTERN,
+                                                  context,
+                                                  NOOP_CONSUMER,
+                                                  NO_CORRECTION))
+                .map(NumberOcrResult::getNumber)
+                .orElse(null);
+
+        if (bankCardAmount == null && bankCardTotalAmount == null) {
+            result.put(Constants.BANK_CARD, MyBigDecimal.error("Both places are nulls"));
+        } else if (bankCardAmount != null && bankCardTotalAmount != null) {
+            if (bankCardAmount.isError() && bankCardTotalAmount.isError()) {
+                result.put(Constants.BANK_CARD, MyBigDecimal.error(bankCardAmount.errorText() + "||||" + bankCardTotalAmount.errorText()));
+            } else if (!bankCardAmount.isError() && !bankCardTotalAmount.isError()) {
+                if (bankCardAmount.value().compareTo(bankCardTotalAmount.value()) == 0) {
+                    result.put(Constants.BANK_CARD, bankCardAmount);
+                } else {
+                    result.put(Constants.BANK_CARD, MyBigDecimal.error("Amounts do not match: " + bankCardAmount.value() + " and " + bankCardTotalAmount.value()));
+                }
+            } else if (!bankCardAmount.isError()) {
+                result.put(Constants.BANK_CARD, bankCardAmount);
+            } else {
+                result.put(Constants.BANK_CARD, bankCardTotalAmount);
+            }
+        } else {
+            result.put(Constants.BANK_CARD, requireNonNullElse(bankCardAmount, bankCardTotalAmount));
+        }
+
+        return result;
+    }
 
     @Override
     protected void validateAndFix(Receipt receipt, RimiContext context) {
@@ -144,6 +209,16 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 .map(tsvWord -> getNumberFromReceipt(tsvWord, MONEY_AMOUNT, context, context::collectTotalSavings, NO_CORRECTION))
                 .map(NumberOcrResult::getNumber)
                 .orElse(MyBigDecimal.zero());
+    }
+
+    @Override
+    protected MyBigDecimal getTotalAmount(RimiContext context) {
+        return context
+                .getLineMatching(PAYMENT_SUM, 0)
+                .flatMap(l -> l.getWordByIndex(-1))
+                .map(word -> getNumberFromReceipt(word, MONEY_AMOUNT, context, NOOP_CONSUMER, NO_CORRECTION))
+                .map(NumberOcrResult::getNumber)
+                .orElse(MyBigDecimal.error("Failed to extract total amount"));
     }
 
     @Override

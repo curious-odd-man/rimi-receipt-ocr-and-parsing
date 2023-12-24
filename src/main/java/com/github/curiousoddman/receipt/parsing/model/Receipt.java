@@ -18,6 +18,8 @@ public class Receipt {
     private MyBigDecimal              totalPayment;
     private MyBigDecimal              usedShopBrandMoney;
     private MyBigDecimal              depositCouponPayment;
+    private MyBigDecimal              totalAmount;
+    private Map<String, MyBigDecimal> paymentMethods;
     private MyBigDecimal              shopBrandMoneyAccumulated;
     private String                    documentNumber;
     private MyLocalDateTime           receiptDateTime;

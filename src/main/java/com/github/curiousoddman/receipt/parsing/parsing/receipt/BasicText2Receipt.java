@@ -24,6 +24,7 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
                 .shopName(getShopName(context))
                 .cashRegisterNumber(getCashRegisterNumber(context))
                 .totalSavings(getTotalSavings(context))
+                .totalAmount(getTotalAmount(context))
                 .totalPayment(getTotalPayment(context))
                 .usedShopBrandMoney(getUsedShopBrandMoney(context))
                 .shopBrandMoneyAccumulated(getShopBrandMoneyAccumulated(context))
@@ -32,10 +33,13 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
                 .discounts(getDiscounts(context))
                 .depositCouponPayment(getDepositCouponPayment(context).getNumber())
                 .items(getItems(context))
+                .paymentMethods(getPaymentMethods(context))
                 .build();
         validateAndFix(receipt, context);
         return receipt;
     }
+
+    protected abstract Map<String, MyBigDecimal> getPaymentMethods(T context);
 
     protected abstract void validateAndFix(Receipt receipt, T context);
 
@@ -52,6 +56,8 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
     protected abstract String getCashRegisterNumber(T context);
 
     protected abstract MyBigDecimal getTotalSavings(T context);
+
+    protected abstract MyBigDecimal getTotalAmount(T context);
 
     protected abstract MyBigDecimal getTotalPayment(T context);
 
