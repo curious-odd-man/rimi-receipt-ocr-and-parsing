@@ -35,7 +35,7 @@ public class ReceiptNumberExtractionChain {
     private final MyTesseract        tesseract;
     private final Tsv2Struct         tsv2Struct;
 
-    public NumberOcrResult parse(TsvWord originalWord) {
+    public NumberOcrResult parse(TsvWord originalWord, int wordIndexInLine) {
         String value = originalWord.getText();
         // First attempt to parse big decimal as is
         if (isFormatValid(expectedFormat, value)) {
@@ -44,14 +44,14 @@ public class ReceiptNumberExtractionChain {
         }
 
         triedValues.add("original: " + value);
-        return combineWithNextWord(originalWord);
+        return combineWithNextWord(originalWord, wordIndexInLine);
     }
 
-    public NumberOcrResult reOcrWord(TsvWord word) {
-        return reOcrWordLocation(word);
-    }
+//    public NumberOcrResult reOcrWord(TsvWord word) {
+//        return reOcrWordLocation(word, wordIndexInLine);
+//    }
 
-    private NumberOcrResult combineWithNextWord(TsvWord originalWord) {
+    private NumberOcrResult combineWithNextWord(TsvWord originalWord, int wordIndexInLine) {
         String value = originalWord.getText();
         // Sometimes there is extra space wrongly detected: -0, 36
         // Try to combine those into one and use it as a value
@@ -72,10 +72,10 @@ public class ReceiptNumberExtractionChain {
             triedValues.add("original combined with next: " + combinedWords);
         }
 
-        return reOcrWordLocation(originalWord);
+        return reOcrWordLocation(originalWord, wordIndexInLine);
     }
 
-    private NumberOcrResult reOcrWordLocation(TsvWord originalWord) {
+    private NumberOcrResult reOcrWordLocation(TsvWord originalWord, int wordIndexInLine) {
         String value = null;
         Rectangle originalWordRectangle = originalWord.getWordRect();
         try {
@@ -95,10 +95,10 @@ public class ReceiptNumberExtractionChain {
 
         triedValues.add("re-ocr word: " + value);
 
-        return reOcrWordLocationInOriginalTiff(originalWord);
+        return reOcrWordLocationInOriginalTiff(originalWord, wordIndexInLine);
     }
 
-    private NumberOcrResult reOcrWordLocationInOriginalTiff(TsvWord originalWord) {
+    private NumberOcrResult reOcrWordLocationInOriginalTiff(TsvWord originalWord, int wordIndexInLine) {
         String value = null;
         Rectangle originalWordRectangle = originalWord.getWordRect();
         try {
@@ -118,10 +118,10 @@ public class ReceiptNumberExtractionChain {
 
         triedValues.add("re-ocr original file: " + value);
 
-        return reOcrWordLine(originalWord);
+        return reOcrWordLine(originalWord, wordIndexInLine);
     }
 
-    private NumberOcrResult reOcrWordLine(TsvWord originalWord) {
+    private NumberOcrResult reOcrWordLine(TsvWord originalWord, int wordIndexInLine) {
         TsvLine line = null;
         String text;
         try {
@@ -133,16 +133,9 @@ public class ReceiptNumberExtractionChain {
             // Finally try to re-ocr whole line and get the word by the same word num.
             String tsvText = tesseract.doOCR(ocrConfig);
             TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
-//            if (tsvDocument.getLines().size() > 1) {
-//                log.error("Found more than one line when re-ocr a line");
-//                for (TsvLine tsvLine : tsvDocument.getLines()) {
-//                    log.error("\t{}", tsvLine.getText());
-//                }
-//                log.error("----------------");
-//            }
             List<TsvLine> lines = tsvDocument.getLines();
             line = lines.get(lines.size() - 1);     // Rectangle of line is streched up, touching previous line, that appears here as well.
-            Optional<TsvWord> wordByWordNum = line.getWordByWordNum(originalWord.getWordNum());
+            Optional<TsvWord> wordByWordNum = line.getWordByIndex(wordIndexInLine);
             if (wordByWordNum.isPresent()) {
                 TsvWord tsvWord = wordByWordNum.get();
                 text = tsvWord.getText();
@@ -157,10 +150,10 @@ public class ReceiptNumberExtractionChain {
             log.error(ex.getMessage(), ex);
         }
 
-        return reOcrWordLineInOriginalTiff(originalWord);
+        return reOcrWordLineInOriginalTiff(originalWord, wordIndexInLine);
     }
 
-    private NumberOcrResult reOcrWordLineInOriginalTiff(TsvWord originalWord) {
+    private NumberOcrResult reOcrWordLineInOriginalTiff(TsvWord originalWord, int wordIndexInLine) {
         TsvLine line = null;
         String text;
         try {
@@ -173,7 +166,7 @@ public class ReceiptNumberExtractionChain {
             String tsvText = tesseract.doOCR(ocrConfig);
             TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
             line = tsvDocument.getLines().get(0);
-            Optional<TsvWord> wordByWordNum = line.getWordByWordNum(originalWord.getWordNum());
+            Optional<TsvWord> wordByWordNum = line.getWordByIndex(wordIndexInLine);
             if (wordByWordNum.isPresent()) {
                 TsvWord tsvWord = wordByWordNum.get();
                 text = tsvWord.getText();

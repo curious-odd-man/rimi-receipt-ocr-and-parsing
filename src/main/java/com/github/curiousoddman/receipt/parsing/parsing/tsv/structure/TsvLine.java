@@ -56,7 +56,7 @@ public class TsvLine implements Positioned {
     public Optional<TsvWord> getWordByIndex(int index) {
         try {
             if (index > 0) {
-                return Optional.of(words.get(0));
+                return Optional.of(words.get(index));
             } else {
                 return Optional.of(words.get(words.size() + index));
             }
