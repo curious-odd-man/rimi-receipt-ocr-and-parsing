@@ -25,6 +25,8 @@ import net.sourceforge.tess4j.TesseractException;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
 
+import java.awt.*;
+import java.util.List;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -213,12 +215,45 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     @Override
     protected MyBigDecimal getTotalAmount(RimiContext context) {
-        return context
-                .getLineMatching(PAYMENT_SUM, 0)
-                .flatMap(l -> l.getWordByIndex(-1))
-                .map(word -> getNumberFromReceipt(word, MONEY_AMOUNT, context, NOOP_CONSUMER, NO_CORRECTION))
-                .map(NumberOcrResult::getNumber)
-                .orElse(MyBigDecimal.error("Failed to extract total amount"));
+        Optional<TsvLine> optionalMatchingLine = context.getLineMatching(PAYMENT_SUM, 0);
+        if (optionalMatchingLine.isEmpty()) {
+            return MyBigDecimal.error("Failed to extract total amount");
+        }
+
+        TsvLine matchingLine = optionalMatchingLine.get();
+        TsvWord lastWord = matchingLine.getWordByIndex(-1).orElseThrow();
+        NumberOcrResult lastWordAsNumber = getNumberFromReceipt(lastWord, MONEY_AMOUNT, context, NOOP_CONSUMER, NO_CORRECTION);
+        if (!lastWordAsNumber.isError()) {
+            return lastWordAsNumber.getNumber();
+        }
+
+        Optional<TsvWord> optionalPreLastWord = matchingLine.getWordByIndex(-2);
+        if (optionalPreLastWord.isEmpty()) {
+            return MyBigDecimal.error("Failed to extract total amount: using 2 last words - there is only one word in line");
+        }
+
+        TsvWord preLastWord = optionalPreLastWord.get();
+        if (preLastWord.getText().endsWith("EUR")) {
+            return MyBigDecimal.error("Failed to extract total amount: using 2 last words - EUR is not a number");
+        }
+
+        Rectangle preLastRectangle = preLastWord.getWordRect();
+        Rectangle lastRectangle = lastWord.getWordRect();
+        Rectangle combinedRectangle = preLastRectangle.union(lastRectangle);
+
+
+        OcrConfig ocrConfig = OcrConfig
+                .builder(context.getOriginFile().preprocessedTiff())
+                .ocrArea(combinedRectangle)
+                .ocrDigitsOnly(true)
+                .build();
+
+        try {
+            String text = tesseract.doOCR(ocrConfig);
+            return toMyBigDecimal(text);
+        } catch (TesseractException e) {
+            return MyBigDecimal.error("Failed to extract total amount: using 2 last words - tesseract error", e);
+        }
     }
 
     @Override

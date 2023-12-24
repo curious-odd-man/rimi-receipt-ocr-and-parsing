@@ -34,8 +34,7 @@ public class Patterns {
     public static final Pattern PAYMENT_SUM              = Pattern.compile("Samaksai EUR +(.*)");
     public static final Pattern TOTAL_CARD_AMOUNT        = Pattern.compile("KOPA: +(\\d+[.,]\\d+) +EUR.*");
     public static final Pattern BANK_CARD_PAYMENT_AMOUNT = Pattern.compile("Bankas karte +(\\d+[.,]\\d+).*");
-
-    public static final Pattern SAVINGS_AMOUNT_SEARCH = Pattern.compile("Tavs\\s+ietaupījums\\s+(.*)");
+    public static final Pattern SAVINGS_AMOUNT_SEARCH    = Pattern.compile("Tavs\\s+ietaupījums\\s+(.*)");
 
     /*
     Nodoklis Ar PWN Bez PVN PWN summa

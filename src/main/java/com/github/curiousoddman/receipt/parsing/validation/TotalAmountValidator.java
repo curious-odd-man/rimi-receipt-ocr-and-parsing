@@ -3,6 +3,7 @@ package com.github.curiousoddman.receipt.parsing.validation;
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
+import com.github.curiousoddman.receipt.parsing.utils.Constants;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -12,30 +13,24 @@ import java.util.List;
 public class TotalAmountValidator implements ReceiptValidator {
     @Override
     public ValidationResult validate(Receipt receipt) {
-        MyBigDecimal receiptTotalPayment = receipt.getTotalPayment();
+        MyBigDecimal receiptTotalPayment = receipt.getTotalAmount();
         if (receiptTotalPayment.isError()) {
             return new ValidationResult(getClass(), List.of(
                     receiptTotalPayment.errorText()
             ));
         }
 
-        MyBigDecimal usedShopBrandMoney = receipt.getUsedShopBrandMoney();
+        MyBigDecimal usedShopBrandMoney = receipt
+                .getDiscounts()
+                .getOrDefault(Constants.USED_SHOP_BRAND_MONEY, MyBigDecimal.zero());
         if (usedShopBrandMoney.isError()) {
             return new ValidationResult(getClass(), List.of(
                     usedShopBrandMoney.errorText()
             ));
         }
 
-        MyBigDecimal depositeCoupon = receipt.getDepositCouponPayment();
-        if (depositeCoupon.isError()) {
-            return new ValidationResult(getClass(), List.of(
-                    depositeCoupon.errorText()
-            ));
-        }
-
         BigDecimal totalPayment = receiptTotalPayment.value()
-                                                     .add(usedShopBrandMoney.value())
-                                                     .subtract(depositeCoupon.value());
+                                                     .add(usedShopBrandMoney.value().abs());
         BigDecimal itemPriceSum = BigDecimal.ZERO;
         for (ReceiptItem item : receipt.getItems()) {
             MyBigDecimal finalCost = item.getFinalCost();
@@ -52,7 +47,8 @@ public class TotalAmountValidator implements ReceiptValidator {
         }
 
         return new ValidationResult(getClass(), List.of(
-                String.format("Total amount %s not equal to sum of item prices %s", totalPayment, itemPriceSum)
+                String.format("Total amount %s minus shop brand money %s not equal to sum of item prices %s",
+                              totalPayment, usedShopBrandMoney.value(), itemPriceSum)
         ));
     }
 }
