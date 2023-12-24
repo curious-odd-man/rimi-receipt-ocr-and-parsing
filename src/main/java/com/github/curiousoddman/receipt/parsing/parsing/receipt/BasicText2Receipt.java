@@ -14,7 +14,7 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
     @Override
     public Receipt parse(String fileName, MyTessResult myTessResult, ParsingStatsCollector parsingStatsCollector) {
         T context = getContext(myTessResult, parsingStatsCollector);
-        return Receipt
+        Receipt receipt = Receipt
                 .builder()
                 .fileName(fileName)
                 .shopBrand(getShopBrand(context))
@@ -31,7 +31,11 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
                 .depositCouponPayment(getDepositCouponPayment(context).getNumber())
                 .items(getItems(context))
                 .build();
+        validateAndFix(receipt, context);
+        return receipt;
     }
+
+    protected abstract void validateAndFix(Receipt receipt, T context);
 
     protected abstract NumberOcrResult getDepositCouponPayment(T context);
 

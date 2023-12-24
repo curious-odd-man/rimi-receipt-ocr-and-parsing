@@ -74,6 +74,18 @@ public class ConversionUtils {
         throw noSuchElementException;
     }
 
+    public static <T> T pickMostFrequent(T... items) {
+        Map<T, Long> countsPerText = Arrays
+                .stream(items)
+                .filter(Objects::nonNull)
+                .collect(groupingBy(t -> t, counting()));
+        TreeMap<Long, List<T>> frequencyToValuesMap = new TreeMap<>(Comparator.reverseOrder());
+        countsPerText.forEach((k, v) -> frequencyToValuesMap
+                .computeIfAbsent(v, ignore -> new ArrayList<>())
+                .add(k));
+        return frequencyToValuesMap.values().iterator().next().get(0);
+    }
+
     public static Optional<MyBigDecimal> getBigDecimalAfterToken(String line, String token) {
         String[] splitByProperty = line.split(token);
         for (String s : splitByProperty) {

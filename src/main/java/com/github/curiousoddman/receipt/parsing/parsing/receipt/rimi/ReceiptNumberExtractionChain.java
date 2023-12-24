@@ -45,6 +45,10 @@ public class ReceiptNumberExtractionChain {
         return combineWithNextWord(originalWord);
     }
 
+    public NumberOcrResult reOcrWord(TsvWord word) {
+        return reOcrWordLocation(word);
+    }
+
     private NumberOcrResult combineWithNextWord(TsvWord originalWord) {
         String value = originalWord.getText();
         // Sometimes there is extra space wrongly detected: -0, 36

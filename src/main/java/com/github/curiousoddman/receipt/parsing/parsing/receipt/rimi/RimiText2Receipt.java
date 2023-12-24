@@ -31,8 +31,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.github.curiousoddman.receipt.parsing.parsing.LocationCorrection.NO_CORRECTION;
-import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.toMyBigDecimal;
 import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.parseDateTime;
+import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.toMyBigDecimal;
 import static com.github.curiousoddman.receipt.parsing.utils.Patterns.*;
 
 @Slf4j
@@ -42,8 +42,22 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     public static final MyBigDecimal RECEIPT_NUMBER_ZERO = new MyBigDecimal(BigDecimal.ZERO, null, null);
 
     private final MyTesseract          tesseract;
-    private final ItemNumbersValidator itemNumbersValidator;
     private final Tsv2Struct           tsv2Struct;
+    private final ItemNumbersValidator itemNumbersValidator;
+    private final TotalAmountValidator totalAmountValidator;
+
+    @Override
+    protected void validateAndFix(Receipt receipt, RimiContext context) {
+        // TODO: see if this is helpful in the end
+//        if (!totalAmountValidator.validate(receipt).isSuccess()) {
+//            var bankCardAmount = context.getBankCardAmount().map(v -> reOcrWordInReceipt(v, MONEY_AMOUNT, context)).map(NumberOcrResult::getNumber);
+//            var paymentAmount = context.getPaymentAmount().map(v -> reOcrWordInReceipt(v, MONEY_AMOUNT, context)).map(NumberOcrResult::getNumber);
+//            var totalAmount = context.getTotalAmount().map(v -> reOcrWordInReceipt(v, MONEY_AMOUNT, context)).map(NumberOcrResult::getNumber);
+//
+//            MyBigDecimal value = ConversionUtils.pickMostFrequent(bankCardAmount.orElse(null), paymentAmount.orElse(null), totalAmount.orElse(null));
+//            receipt.setTotalPayment(value);
+//        }
+    }
 
     @Override
     protected NumberOcrResult getDepositCouponPayment(RimiContext context) {
@@ -346,13 +360,6 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
     }
 
-    private static void printUnableToFindTessWordsError(List<TsvWord> tessWords) {
-        log.error("Cannot find tess word: {}", tessWords.size());
-        for (TsvWord tessWord : tessWords) {
-            log.error("\t{}", tessWord);
-        }
-    }
-
     private static Optional<TsvWord> getWordFromMatchingLine(RimiContext context, Pattern pattern, int wordIndex) {
         return context
                 .getLineMatching(pattern, 0)
@@ -390,5 +397,22 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         );
 
         return receiptNumberExtractionChain.parse(originalWord);
+    }
+
+    private NumberOcrResult reOcrWordInReceipt(TsvWord originalWord,
+                                               Pattern expectedFormat,
+                                               RimiContext context) {
+
+        ReceiptNumberExtractionChain receiptNumberExtractionChain = new ReceiptNumberExtractionChain(
+                expectedFormat,
+                context,
+                v -> {
+                },
+                NO_CORRECTION,
+                tesseract,
+                tsv2Struct
+        );
+
+        return receiptNumberExtractionChain.reOcrWord(originalWord);
     }
 }
