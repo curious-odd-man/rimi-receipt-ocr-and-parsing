@@ -59,36 +59,35 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         Optional<TsvLine> couponLine = context.getLineMatching(DEPOZIT_COUNPON_LINE, 0);
         couponLine
                 .flatMap(tsvLine -> tsvLine.getWordByIndex(-1))
-                .map(word -> getNumberFromReceipt(word,
-                                                  NUMBER_PATTERN,
-                                                  context,
-                                                  NOOP_CONSUMER,
-                                                  NO_CORRECTION
+                .map(word -> getNumberFromReceiptAndReportError(word,
+                                                                NUMBER_PATTERN,
+                                                                context,
+                                                                NOOP_CONSUMER,
+                                                                NO_CORRECTION
                 ))
                 .map(NumberOcrResult::getNumber)
                 .ifPresent(amount -> result.put(Constants.DEPOSIT_COUPON, amount));
-
 
         // Bank card amount
         MyBigDecimal bankCardTotalAmount = context
                 .getLineMatching(TOTAL_CARD_AMOUNT, 0)
                 .flatMap(l -> l.getWordByIndex(-2))
-                .map(word -> getNumberFromReceipt(word,
-                                                  NUMBER_PATTERN,
-                                                  context,
-                                                  NOOP_CONSUMER,
-                                                  NO_CORRECTION))
+                .map(word -> getNumberFromReceiptAndReportError(word,
+                                                                NUMBER_PATTERN,
+                                                                context,
+                                                                NOOP_CONSUMER,
+                                                                NO_CORRECTION))
                 .map(NumberOcrResult::getNumber)
                 .orElse(null);
 
         MyBigDecimal bankCardAmount = context
                 .getLineMatching(BANK_CARD_PAYMENT_AMOUNT, 0)
                 .flatMap(l -> l.getWordByIndex(-1))
-                .map(word -> getNumberFromReceipt(word,
-                                                  NUMBER_PATTERN,
-                                                  context,
-                                                  NOOP_CONSUMER,
-                                                  NO_CORRECTION))
+                .map(word -> getNumberFromReceiptAndReportError(word,
+                                                                NUMBER_PATTERN,
+                                                                context,
+                                                                NOOP_CONSUMER,
+                                                                NO_CORRECTION))
                 .map(NumberOcrResult::getNumber)
                 .orElse(null);
 
@@ -132,11 +131,11 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     protected NumberOcrResult getDepositCouponPayment(RimiContext context) {
         Optional<TsvLine> couponLine = context.getLineMatching(Pattern.compile("Depoz.ta\\s+kupons\\s+"), 0);
         return couponLine
-                .map(tsvLine -> getNumberFromReceipt(tsvLine.getWordByIndex(-1),
-                                                     NUMBER_PATTERN,
-                                                     context,
-                                                     word -> {
-                                                     }, NO_CORRECTION
+                .map(tsvLine -> getNumberFromReceiptAndReportError(tsvLine.getWordByIndex(-1),
+                                                                   NUMBER_PATTERN,
+                                                                   context,
+                                                                   word -> {
+                                                                   }, NO_CORRECTION
                 )).orElseGet(() -> NumberOcrResult.of(
                         MyBigDecimal.zero(),
                         null));
@@ -150,11 +149,11 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         for (TsvLine tsvLine : linesBetween) {
             List<TsvWord> words = new ArrayList<>(tsvLine.getWords());
             TsvWord amountWord = words.get(words.size() - 1);
-            NumberOcrResult amountNumber = getNumberFromReceipt(amountWord,
-                                                                NUMBER_PATTERN,
-                                                                context,
-                                                                NOOP_CONSUMER,
-                                                                NO_CORRECTION);
+            NumberOcrResult amountNumber = getNumberFromReceiptAndReportError(amountWord,
+                                                                              NUMBER_PATTERN,
+                                                                              context,
+                                                                              NOOP_CONSUMER,
+                                                                              NO_CORRECTION);
             if (amountNumber.isError()) {
                 discountNameBuilder.addAll(tsvLine.getWords());
             } else {
@@ -208,7 +207,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     @Override
     protected MyBigDecimal getTotalSavings(RimiContext context) {
         return getWordFromMatchingLine(context, SAVINGS_AMOUNT_SEARCH, 3)
-                .map(tsvWord -> getNumberFromReceipt(tsvWord, MONEY_AMOUNT, context, context::collectTotalSavings, NO_CORRECTION))
+                .map(tsvWord -> getNumberFromReceiptAndReportError(tsvWord, MONEY_AMOUNT, context, context::collectTotalSavings, NO_CORRECTION))
                 .map(NumberOcrResult::getNumber)
                 .orElse(MyBigDecimal.zero());
     }
@@ -229,18 +228,19 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
 
         Optional<TsvWord> optionalPreLastWord = matchingLine.getWordByIndex(-2);
         if (optionalPreLastWord.isEmpty()) {
+            lastWordAsNumber.reportError();
             return MyBigDecimal.error("Failed to extract total amount: using 2 last words - there is only one word in line");
         }
 
         TsvWord preLastWord = optionalPreLastWord.get();
         if (preLastWord.getText().endsWith("EUR")) {
+            lastWordAsNumber.reportError();
             return MyBigDecimal.error("Failed to extract total amount: using 2 last words - EUR is not a number");
         }
 
         Rectangle preLastRectangle = preLastWord.getWordRect();
         Rectangle lastRectangle = lastWord.getWordRect();
         Rectangle combinedRectangle = preLastRectangle.union(lastRectangle);
-
 
         OcrConfig ocrConfig = OcrConfig
                 .builder(context.getOriginFile().preprocessedTiff())
@@ -252,6 +252,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
             String text = tesseract.doOCR(ocrConfig);
             return toMyBigDecimal(text);
         } catch (TesseractException e) {
+            lastWordAsNumber.reportError();
             return MyBigDecimal.error("Failed to extract total amount: using 2 last words - tesseract error", e);
         }
     }
@@ -367,7 +368,7 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
     protected MyBigDecimal getUsedShopBrandMoney(RimiContext context) {
         Optional<TsvLine> lineMatching = context.getLineMatching(SHOP_BRAND_MONEY_SPENT, 0);
         return lineMatching
-                .map(tsvLine -> getNumberFromReceipt(
+                .map(tsvLine -> getNumberFromReceiptAndReportError(
                         tsvLine.getWordByIndex(-1),
                         NUMBER_PATTERN,
                         context,
@@ -386,11 +387,11 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         NumberOcrResult finalCostOcrResult;
         NumberOcrResult discountOcrResult = NumberOcrResult.of(MyBigDecimal.zero(), null);
         if (discountLine != null) {
-            finalCostOcrResult = getNumberFromReceipt(discountLine.getWordByIndex(-1), MONEY_AMOUNT, context, context::collectItemFinalCostWithDiscountLocation, NO_CORRECTION);
-            discountOcrResult = getNumberFromReceipt(discountLine.getWordByWordNum(2), MONEY_AMOUNT, context, context::collectItemDiscountLocation, NO_CORRECTION);
+            finalCostOcrResult = getNumberFromReceiptAndReportError(discountLine.getWordByIndex(-1), MONEY_AMOUNT, context, context::collectItemFinalCostWithDiscountLocation, NO_CORRECTION);
+            discountOcrResult = getNumberFromReceiptAndReportError(discountLine.getWordByWordNum(2), MONEY_AMOUNT, context, context::collectItemDiscountLocation, NO_CORRECTION);
         } else {
             Optional<TsvWord> finalCostGroupValue = priceLine.getWordByWordNum(6);
-            finalCostOcrResult = getNumberFromReceipt(finalCostGroupValue, MONEY_AMOUNT, context, context::collectItemFinalCostLocation, NO_CORRECTION);
+            finalCostOcrResult = getNumberFromReceiptAndReportError(finalCostGroupValue, MONEY_AMOUNT, context, context::collectItemFinalCostLocation, NO_CORRECTION);
         }
 
         Optional<TsvWord> countText = priceLine.getWordByWordNum(1);
@@ -400,8 +401,8 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
                 .orElseThrow();
         String unitsWord = unitsTsvWord.getText();
         context.collectItemUnitsLocation(unitsTsvWord);
-        NumberOcrResult countOcrResult = getNumberFromReceipt(countText, unitsWord.equalsIgnoreCase("gab") ? INTEGER : WEIGHT, context, context::collectItemCountLocation, NO_CORRECTION);
-        NumberOcrResult pricePerUnitOcrResult = getNumberFromReceipt(pricePerUnitText, MONEY_AMOUNT, context, context::collectPricePerUnitLocation, NO_CORRECTION);
+        NumberOcrResult countOcrResult = getNumberFromReceiptAndReportError(countText, unitsWord.equalsIgnoreCase("gab") ? INTEGER : WEIGHT, context, context::collectItemCountLocation, NO_CORRECTION);
+        NumberOcrResult pricePerUnitOcrResult = getNumberFromReceiptAndReportError(pricePerUnitText, MONEY_AMOUNT, context, context::collectPricePerUnitLocation, NO_CORRECTION);
         ReceiptItem item = ReceiptItem
                 .builder()
                 .description(Strings.join(itemNameBuilder, ' ').trim())
@@ -482,13 +483,13 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         return lineMatching.flatMap(line -> ConversionUtils.getFirstGroup(line.getText(), pattern));
     }
 
-    private NumberOcrResult getNumberFromReceipt(Optional<TsvWord> word,
-                                                 Pattern expectedFormat,
-                                                 RimiContext context,
-                                                 Consumer<TsvWord> tsvWordConsumer,
-                                                 LocationCorrection locationCorrection) {
+    private NumberOcrResult getNumberFromReceiptAndReportError(Optional<TsvWord> word,
+                                                               Pattern expectedFormat,
+                                                               RimiContext context,
+                                                               Consumer<TsvWord> tsvWordConsumer,
+                                                               LocationCorrection locationCorrection) {
         return word
-                .map(w -> getNumberFromReceipt(w, expectedFormat, context, tsvWordConsumer, locationCorrection))
+                .map(w -> getNumberFromReceiptAndReportError(w, expectedFormat, context, tsvWordConsumer, locationCorrection))
                 .orElse(NumberOcrResult.ofError("Optional word is empty"));
     }
 
@@ -510,19 +511,41 @@ public class RimiText2Receipt extends BasicText2Receipt<RimiContext> {
         return receiptNumberExtractionChain.parse(originalWord);
     }
 
-    private NumberOcrResult reOcrWordInReceipt(TsvWord originalWord,
-                                               Pattern expectedFormat,
-                                               RimiContext context) {
+    private NumberOcrResult getNumberFromReceiptAndReportError(TsvWord originalWord,
+                                                               Pattern expectedFormat,
+                                                               RimiContext context,
+                                                               Consumer<TsvWord> tsvWordConsumer,
+                                                               LocationCorrection locationCorrection) {
 
         ReceiptNumberExtractionChain receiptNumberExtractionChain = new ReceiptNumberExtractionChain(
                 expectedFormat,
                 context,
-                NOOP_CONSUMER,
-                NO_CORRECTION,
+                tsvWordConsumer,
+                locationCorrection,
                 tesseract,
                 tsv2Struct
         );
 
-        return receiptNumberExtractionChain.reOcrWord(originalWord);
+        NumberOcrResult numberOcrResult = receiptNumberExtractionChain.parse(originalWord);
+        if (numberOcrResult.isError()) {
+            numberOcrResult.reportError();
+        }
+        return numberOcrResult;
     }
+//
+//    private NumberOcrResult reOcrWordInReceipt(TsvWord originalWord,
+//                                               Pattern expectedFormat,
+//                                               RimiContext context) {
+//
+//        ReceiptNumberExtractionChain receiptNumberExtractionChain = new ReceiptNumberExtractionChain(
+//                expectedFormat,
+//                context,
+//                NOOP_CONSUMER,
+//                NO_CORRECTION,
+//                tesseract,
+//                tsv2Struct
+//        );
+//
+//        return receiptNumberExtractionChain.reOcrWord(originalWord);
+//    }
 }
