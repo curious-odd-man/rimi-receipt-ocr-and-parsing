@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
@@ -19,4 +20,10 @@ public class TsvBlock {
     private final int height;
 
     private final List<TsvParagraph> paragraphs;
+
+
+    @Override
+    public String toString() {
+        return paragraphs.stream().map(TsvParagraph::toString).collect(Collectors.joining(";"));
+    }
 }

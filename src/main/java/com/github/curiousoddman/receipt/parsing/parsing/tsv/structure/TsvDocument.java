@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
@@ -38,5 +39,10 @@ public class TsvDocument {
                 .map(TsvLine::getWords)
                 .flatMap(Collection::stream)
                 .toList();
+    }
+
+    @Override
+    public String toString() {
+        return pages.stream().map(TsvPage::toString).collect(Collectors.joining(";"));
     }
 }

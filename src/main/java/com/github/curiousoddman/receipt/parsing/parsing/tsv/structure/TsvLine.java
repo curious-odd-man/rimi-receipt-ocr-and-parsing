@@ -77,4 +77,9 @@ public class TsvLine implements Positioned {
     public int getIndex() {
         return lineNum;
     }
+
+    @Override
+    public String toString() {
+        return getText();
+    }
 }

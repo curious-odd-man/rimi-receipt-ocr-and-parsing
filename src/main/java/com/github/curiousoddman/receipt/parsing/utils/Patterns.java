@@ -31,9 +31,9 @@ public class Patterns {
      */
     public static final Pattern ITEM_DISCOUNT_LINE_PATTERN = Pattern.compile(".?....\\s+-*(-.*)\\s+Gala\\s+cena\\s+(.*)");
 
-    public static final Pattern PAYMENT_SUM      = Pattern.compile("Samaksai EUR +(.*)");
-    public static final Pattern TOTAL_AMOUNT     = Pattern.compile("KOPA: +(\\d+[.,]\\d+) +EUR.*");
-    public static final Pattern BANK_CARD_AMOUNT = Pattern.compile("Bankas karte +(\\d+[.,]\\d+).*");
+    public static final Pattern PAYMENT_SUM              = Pattern.compile("Samaksai EUR +(.*)");
+    public static final Pattern TOTAL_CARD_AMOUNT        = Pattern.compile("KOPA: +(\\d+[.,]\\d+) +EUR.*");
+    public static final Pattern BANK_CARD_PAYMENT_AMOUNT = Pattern.compile("Bankas karte +(\\d+[.,]\\d+).*");
 
     public static final Pattern SAVINGS_AMOUNT_SEARCH = Pattern.compile("Tavs\\s+ietaupījums\\s+(.*)");
 
@@ -61,4 +61,5 @@ public class Patterns {
     public static final Pattern NON_DIGITS = Pattern.compile("\\D+");
 
     public static final Pattern SHOP_BRAND_MONEY_SPENT = Pattern.compile("Izmantot.\\s+Mans\\s+Rimi\\s+nauda.*");
+    public static final Pattern DEPOZIT_COUNPON_LINE   = Pattern.compile("Depoz.ta\\s+kupons\\s+.*");
 }

@@ -67,7 +67,7 @@ public class ReceiptNumberExtractionChain {
                         wordRect);
             }
 
-            triedValues.add("original: " + combinedWords);
+            triedValues.add("original combined with next: " + combinedWords);
         }
 
         return reOcrWordLocation(originalWord);

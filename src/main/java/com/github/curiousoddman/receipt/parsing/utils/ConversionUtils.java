@@ -22,9 +22,9 @@ public class ConversionUtils {
                 .replace("\n", "")
                 .replace(',', '.');
         try {
-            return new MyBigDecimal(new BigDecimal(cleanedInputText), text, null);
+            return MyBigDecimal.value(cleanedInputText, text);
         } catch (Exception e) {
-            return new MyBigDecimal(null, text, e.getMessage());
+            return MyBigDecimal.error(text, e);
         }
     }
 
@@ -33,7 +33,7 @@ public class ConversionUtils {
                 .replace("\r", "")
                 .replace("\n", "")
                 .replace(',', '.');
-        return new MyBigDecimal(new BigDecimal(cleanedInputText), text, null);
+        return MyBigDecimal.value(cleanedInputText, text);
     }
 
     /**

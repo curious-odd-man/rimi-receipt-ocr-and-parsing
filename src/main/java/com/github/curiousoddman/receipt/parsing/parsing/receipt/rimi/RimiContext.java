@@ -79,7 +79,11 @@ public class RimiContext implements Context {
     }
 
     public List<TsvLine> getLinesMatching(Pattern pattern) {
-        return tsvDocument.getLines().stream().filter(line -> pattern.matcher(line.getText()).matches()).toList();
+        return tsvDocument
+                .getLines()
+                .stream()
+                .filter(line -> pattern.matcher(line.getText()).matches())
+                .toList();
     }
 
     public List<TsvLine> getLinesBetween(String beginning, String end) {

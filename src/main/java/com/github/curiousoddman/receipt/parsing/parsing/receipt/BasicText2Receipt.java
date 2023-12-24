@@ -1,12 +1,15 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt;
 
-import com.github.curiousoddman.receipt.parsing.model.*;
+import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
+import com.github.curiousoddman.receipt.parsing.model.MyLocalDateTime;
+import com.github.curiousoddman.receipt.parsing.model.Receipt;
+import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi.NumberOcrResult;
 import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Map;
 
 
 public abstract class BasicText2Receipt<T extends Context> implements Text2Receipt {
@@ -23,7 +26,6 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
                 .totalSavings(getTotalSavings(context))
                 .totalPayment(getTotalPayment(context))
                 .usedShopBrandMoney(getUsedShopBrandMoney(context))
-                //.totalVat(getTotalVat(context))
                 .shopBrandMoneyAccumulated(getShopBrandMoneyAccumulated(context))
                 .documentNumber(getDocumentNumber(context))
                 .receiptDateTime(getReceiptDateTime(context))
@@ -39,7 +41,7 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
 
     protected abstract NumberOcrResult getDepositCouponPayment(T context);
 
-    protected abstract List<Discount> getDiscounts(T context);
+    protected abstract Map<String, MyBigDecimal> getDiscounts(T context);
 
     protected abstract T getContext(MyTessResult text, ParsingStatsCollector parsingStatsCollector);
 
@@ -52,8 +54,6 @@ public abstract class BasicText2Receipt<T extends Context> implements Text2Recei
     protected abstract MyBigDecimal getTotalSavings(T context);
 
     protected abstract MyBigDecimal getTotalPayment(T context);
-
-//    protected abstract MyBigDecimal getTotalVat(T context);
 
     protected abstract MyBigDecimal getShopBrandMoneyAccumulated(T context);
 

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
@@ -18,4 +19,9 @@ public class TsvPage {
     private final int         height;
 
     private final List<TsvBlock> blocks;
+
+    @Override
+    public String toString() {
+        return blocks.stream().map(TsvBlock::toString).collect(Collectors.joining(";"));
+    }
 }

@@ -14,7 +14,7 @@ public class NumberOcrResult {
 
     public static NumberOcrResult ofError(String errorText) {
         return new NumberOcrResult(
-                new MyBigDecimal(null, null, errorText),
+                MyBigDecimal.error(errorText),
                 null
         );
     }
