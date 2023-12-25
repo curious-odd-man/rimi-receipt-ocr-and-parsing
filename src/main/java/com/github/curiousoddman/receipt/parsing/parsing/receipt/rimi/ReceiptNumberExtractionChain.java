@@ -5,9 +5,9 @@ import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvLine;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
+import com.github.curiousoddman.receipt.parsing.stats.AllNumberCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
 import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
-import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.TesseractException;
@@ -34,24 +34,22 @@ public class ReceiptNumberExtractionChain {
     private final LocationCorrection locationCorrection;
     private final MyTesseract        tesseract;
     private final Tsv2Struct         tsv2Struct;
+    private final AllNumberCollector allNumberCollector;
 
-    public NumberOcrResult parse(TsvWord originalWord, int wordIndexInLine) {
+    public NumberOcrResult parse(TsvWord originalWord, int wordIndexInLine, String type) {
         String value = originalWord.getText();
         // First attempt to parse big decimal as is
         if (isFormatValid(expectedFormat, value)) {
             tsvWordConsumer.accept(originalWord);
+            allNumberCollector.add(context.getOriginFile().preprocessedTiff(), type, originalWord);
             return NumberOcrResult.of(toMyBigDecimal(value), originalWord.getWordRect());
         }
 
         triedValues.add("original: " + value);
-        return combineWithNextWord(originalWord, wordIndexInLine);
+        return combineWithNextWord(originalWord, wordIndexInLine, type);
     }
 
-//    public NumberOcrResult reOcrWord(TsvWord word) {
-//        return reOcrWordLocation(word, wordIndexInLine);
-//    }
-
-    private NumberOcrResult combineWithNextWord(TsvWord originalWord, int wordIndexInLine) {
+    private NumberOcrResult combineWithNextWord(TsvWord originalWord, int wordIndexInLine, String type) {
         String value = originalWord.getText();
         // Sometimes there is extra space wrongly detected: -0, 36
         // Try to combine those into one and use it as a value
@@ -64,6 +62,7 @@ public class ReceiptNumberExtractionChain {
                 tsvWordConsumer.accept(originalWord);
                 Rectangle wordRect = new Rectangle(originalWord.getWordRect());
                 wordRect.add(tsvWord.getWordRect());
+                allNumberCollector.add(context.getOriginFile().preprocessedTiff(), type, combinedWords, wordRect);
                 return NumberOcrResult.of(
                         toMyBigDecimal(combinedWords),
                         wordRect);
@@ -72,10 +71,10 @@ public class ReceiptNumberExtractionChain {
             triedValues.add("original combined with next: " + combinedWords);
         }
 
-        return reOcrWordLocation(originalWord, wordIndexInLine);
+        return reOcrWordLocation(originalWord, wordIndexInLine, type);
     }
 
-    private NumberOcrResult reOcrWordLocation(TsvWord originalWord, int wordIndexInLine) {
+    private NumberOcrResult reOcrWordLocation(TsvWord originalWord, int wordIndexInLine, String type) {
         String value = null;
         Rectangle originalWordRectangle = originalWord.getWordRect();
         try {
@@ -87,6 +86,7 @@ public class ReceiptNumberExtractionChain {
             value = tesseract.doOCR(ocrConfig);
             if (isFormatValid(expectedFormat, value)) {
                 tsvWordConsumer.accept(originalWord);
+                allNumberCollector.add(context.getOriginFile().preprocessedTiff(), type, value, originalWordRectangle);
                 return NumberOcrResult.of(toMyBigDecimal(value), originalWordRectangle);
             }
         } catch (TesseractException ex) {
@@ -95,10 +95,10 @@ public class ReceiptNumberExtractionChain {
 
         triedValues.add("re-ocr word: " + value);
 
-        return reOcrWordLocationInOriginalTiff(originalWord, wordIndexInLine);
+        return reOcrWordLocationInOriginalTiff(originalWord, wordIndexInLine, type);
     }
 
-    private NumberOcrResult reOcrWordLocationInOriginalTiff(TsvWord originalWord, int wordIndexInLine) {
+    private NumberOcrResult reOcrWordLocationInOriginalTiff(TsvWord originalWord, int wordIndexInLine, String type) {
         String value = null;
         Rectangle originalWordRectangle = originalWord.getWordRect();
         try {
@@ -118,10 +118,10 @@ public class ReceiptNumberExtractionChain {
 
         triedValues.add("re-ocr original file: " + value);
 
-        return reOcrWordLine(originalWord, wordIndexInLine);
+        return reOcrWordLine(originalWord, wordIndexInLine, type);
     }
 
-    private NumberOcrResult reOcrWordLine(TsvWord originalWord, int wordIndexInLine) {
+    private NumberOcrResult reOcrWordLine(TsvWord originalWord, int wordIndexInLine, String type) {
         TsvLine line = null;
         String text;
         try {
@@ -141,6 +141,7 @@ public class ReceiptNumberExtractionChain {
                 text = tsvWord.getText();
                 if (isFormatValid(expectedFormat, text)) {
                     tsvWordConsumer.accept(tsvWord);
+                    allNumberCollector.add(context.getOriginFile().preprocessedTiff(), type, tsvWord);
                     return NumberOcrResult.of(toMyBigDecimal(text), tsvWord.getWordRect());
                 }
             }
@@ -150,10 +151,10 @@ public class ReceiptNumberExtractionChain {
             log.error(ex.getMessage(), ex);
         }
 
-        return reOcrWordLineInOriginalTiff(originalWord, wordIndexInLine);
+        return reOcrWordLineInOriginalTiff(originalWord, wordIndexInLine, type);
     }
 
-    private NumberOcrResult reOcrWordLineInOriginalTiff(TsvWord originalWord, int wordIndexInLine) {
+    private NumberOcrResult reOcrWordLineInOriginalTiff(TsvWord originalWord, int wordIndexInLine, String type) {
         TsvLine line = null;
         String text;
         try {
@@ -172,6 +173,7 @@ public class ReceiptNumberExtractionChain {
                 text = tsvWord.getText();
                 if (isFormatValid(expectedFormat, text)) {
                     tsvWordConsumer.accept(tsvWord);
+                    allNumberCollector.add(context.getOriginFile().preprocessedTiff(), type, tsvWord);
                     return NumberOcrResult.of(toMyBigDecimal(text), tsvWord.getWordRect());
                 }
             }

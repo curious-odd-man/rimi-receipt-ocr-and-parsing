@@ -1,16 +1,12 @@
 package com.github.curiousoddman.receipt.parsing;
 
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.github.curiousoddman.receipt.parsing.cache.FileCache;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.parsing.Pdf2Text;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.Text2Receipt;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
+import com.github.curiousoddman.receipt.parsing.stats.AllNumberCollector;
 import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationExecutor;
@@ -30,24 +26,21 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WRITER;
+
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class App implements ApplicationRunner {
-    private static final ObjectWriter       OBJECT_MAPPER = JsonMapper.builder()
-                                                                      .addModule(new ParameterNamesModule())
-                                                                      .addModule(new Jdk8Module())
-                                                                      .addModule(new JavaTimeModule())
-                                                                      .build()
-                                                                      .writerWithDefaultPrettyPrinter();
-    private final        Pdf2Text           pdf2Text;
-    private final        List<Text2Receipt> text2ReceiptList;
-    private final        FileCache          fileCache;
-    private final        IgnoreList         ignoreList;
-    private final        Whitelist          whitelist;
-    private final        ValidationExecutor validationExecutor;
-    private final        Tsv2Struct         tsv2Struct;
+    private final Pdf2Text           pdf2Text;
+    private final List<Text2Receipt> text2ReceiptList;
+    private final FileCache          fileCache;
+    private final IgnoreList         ignoreList;
+    private final Whitelist          whitelist;
+    private final ValidationExecutor validationExecutor;
+    private final Tsv2Struct         tsv2Struct;
+    private final AllNumberCollector allNumberCollector;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -73,11 +66,11 @@ public class App implements ApplicationRunner {
                 MyTessResult myTessResult = fileCache.getOrCreate(pdfFile, pdf2Text::convert);
                 TsvDocument tsvDocument = tsv2Struct.parseTsv(myTessResult.getTsvText());
                 myTessResult.setTsvDocument(tsvDocument);
-                fileCache.create(Path.of(sourcePdfName + ".tsv.json"), OBJECT_MAPPER.writeValueAsString(tsvDocument));
+                fileCache.create(Path.of(sourcePdfName + ".tsv.json"), OBJECT_WRITER.writeValueAsString(tsvDocument));
                 Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, myTessResult, parsingStatsCollector);
                 if (optionalReceipt.isPresent()) {
                     Receipt receipt = optionalReceipt.get();
-                    String receiptJson = OBJECT_MAPPER.writeValueAsString(receipt);
+                    String receiptJson = OBJECT_WRITER.writeValueAsString(receipt);
 
                     fileCache.create(Path.of(sourcePdfName + ".json"), receiptJson);
 
@@ -89,6 +82,7 @@ public class App implements ApplicationRunner {
         }
 
         parsingStatsCollector.printStats();
+        allNumberCollector.saveResult();
     }
 
 

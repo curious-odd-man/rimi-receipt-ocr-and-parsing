@@ -13,7 +13,7 @@ import static org.opencv.imgcodecs.Imgcodecs.IMREAD_GRAYSCALE;
 import static org.opencv.imgproc.Imgproc.*;
 
 @Slf4j
-public class TryThreshold {
+public class TryDifferentImgPreproccessingThresholds {
     public static void main(String[] args) {
         OpenCV.loadLocally();
 

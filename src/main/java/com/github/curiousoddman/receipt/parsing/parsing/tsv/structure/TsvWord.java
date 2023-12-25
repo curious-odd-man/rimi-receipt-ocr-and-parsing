@@ -33,12 +33,6 @@ public class TsvWord implements Positioned {
         );
     }
 
-    @JsonIgnore
-    public boolean isFollowedBy(TsvWord anotherTessWord) {
-        return parentLine == anotherTessWord.parentLine
-                && wordNum + 1 == anotherTessWord.wordNum;
-    }
-
     @Override
     public int getIndex() {
         return wordNum;
