@@ -1,6 +1,9 @@
 package com.github.curiousoddman.receipt.alt.main;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.curiousoddman.receipt.parsing.stats.AllNumberCollector;
+import com.github.curiousoddman.receipt.parsing.stats.MyRect;
+import com.github.curiousoddman.receipt.parsing.stats.NumberOnReceipt;
 import com.github.curiousoddman.receipt.parsing.utils.JsonUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -9,9 +12,9 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -21,66 +24,217 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class NumberImageStatisticsProcessor {
+    private static final Path       ROOT_DIR                                    = AllNumberCollector.ALL_NUMBER_WORDS_JSON.getParent();
+    private static final Path       EXTRACTED_LETTER_FILE                       = ROOT_DIR.resolve("extracted-letters.json");
+    private static final int        N_THREADS                                   = 7;
+    private static final ImageCache IMAGE_CACHE                                 = new ImageCache();
+    private static final boolean    PRINT_ALL_RECEIPTS_WITH_RECT_AROUND_NUMBERS = true;
+    private static final boolean    SAVE_CATEGORIZED_IMAGES                     = true;
+    private static final boolean    SAVE_CATEGORIZED_IMAGES_SELECTED            = true;
 
-    private static final Map<Integer, List<ImgLetter>> ALL_IMG_LETTERS = new HashMap<>();
-
-    private static int imgCounter = 0;
-
-    @SneakyThrows
     public static void main(String[] args) {
-        ExecutorService executorService = Executors.newFixedThreadPool(7);
-        String contents = Files.readString(AllNumberCollector.OUTPUT_PATH);
+        NumberOnReceipt[] numberOnReceipts = loadInputFile();
 
-        AllNumberCollector.Number[] numbers = JsonUtils.OBJECT_MAPPER.readValue(contents, AllNumberCollector.Number[].class);
-
-        Map<Path, List<AllNumberCollector.Number>> groupedByFile = Arrays.stream(numbers).collect(Collectors.groupingBy(AllNumberCollector.Number::filePath));
-        Iterator<List<AllNumberCollector.Number>> iterator = groupedByFile.values().iterator();
-
-        for (int i = 0; iterator.hasNext(); i++) {
-            List<AllNumberCollector.Number> next = iterator.next();
-            for (AllNumberCollector.Number number : next) {
-                Path imageFile = number.filePath();
-                String numberText = number.numberText();
-                executorService.submit(() -> {
-                    List<ImgLetter> imgLetterList = findLettersOnImage(imageFile, number);
-                });
-            }
-        }
-
-        groupedByFile.forEach((file, items) -> {
-            try {
-                BufferedImage image = ImageIO.read(file.toFile());
-                Graphics graphics = image.getGraphics();
-                graphics.setColor(Color.BLACK);
-                for (AllNumberCollector.Number item : items) {
-                    AllNumberCollector.MyRect location = item.location();
-                    graphics.drawRect(location.x(), location.y(), location.w(), location.h());
-                }
-                Path rootDir = AllNumberCollector.OUTPUT_PATH.getParent();
-                String fileName = file.getFileName().toString();
-                File output = rootDir.resolve("numbers").resolve(fileName + "markeup.png").toFile();
-                ImageIO.write(image, "png", output);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        executorService.shutdown();
-        executorService.awaitTermination(1, TimeUnit.DAYS);
+        Map<FontLetter, List<ImgLetter>> groupedByLetter = readOrExtractLetterImages(numberOnReceipts);
+        Map<FontLetter, Map<Size, List<ImgLetter>>> imageLettersGroupBySizes = groupEachLetterBySizes(groupedByLetter);
+        Map<FontLetter, List<ImgLetter>> imageLettersWithLargestMatchingSize = eachLetterSameSizeLargestGroup(imageLettersGroupBySizes);
     }
 
     @SneakyThrows
-    private static List<ImgLetter> findLettersOnImage(Path imageFile, AllNumberCollector.Number num) {
-        AllNumberCollector.MyRect textLocationInFile = num.location();
+    private static Map<FontLetter, List<ImgLetter>> readOrExtractLetterImages(NumberOnReceipt[] numberOnReceipts) {
+        if (Files.exists(EXTRACTED_LETTER_FILE)) {
+            String fileContents = Files.readString(EXTRACTED_LETTER_FILE);
+            TypeReference<Map<FontLetter, List<ImgLetter>>> typeRef = new TypeReference<>() {
+            };
+
+            return JsonUtils.OBJECT_MAPPER.readValue(fileContents, typeRef);
+        }
+
+        Map<FontLetter, List<ImgLetter>> groupedByLetter = getGroupedByLetter(numberOnReceipts);
+
+        String json = JsonUtils.OBJECT_WRITER.writeValueAsString(groupedByLetter);
+        Files.writeString(EXTRACTED_LETTER_FILE, json, StandardOpenOption.CREATE_NEW);
+        return groupedByLetter;
+    }
+
+    private static Map<FontLetter, List<ImgLetter>> eachLetterSameSizeLargestGroup(Map<FontLetter, Map<Size, List<ImgLetter>>> imageLettersGroupBySizes) {
+        Map<FontLetter, List<ImgLetter>> imageLettersWithLargestMatchingSize = new HashMap<>();
+
+        log.info("Letter size statistics:");
+
+        for (Map.Entry<FontLetter, Map<Size, List<ImgLetter>>> entry : imageLettersGroupBySizes.entrySet()) {
+            FontLetter letter = entry.getKey();
+            Map<Size, List<ImgLetter>> sizes = entry.getValue();
+            List<ImgLetter> largest = null;
+            log.info("{}", letter);
+            for (Map.Entry<Size, List<ImgLetter>> sizeAndLetter : sizes.entrySet()) {
+                log.info("\t{} - {}", sizeAndLetter.getKey(), sizeAndLetter.getValue().size());
+                if (largest == null) {
+                    largest = sizeAndLetter.getValue();
+                } else if (largest.size() < sizeAndLetter.getValue().size()) {
+                    largest = sizeAndLetter.getValue();
+                }
+            }
+            imageLettersWithLargestMatchingSize.put(letter, largest);
+        }
+
+        if (SAVE_CATEGORIZED_IMAGES_SELECTED) {
+            saveCategorizedLettersWithLargestSameSize(imageLettersWithLargestMatchingSize);
+        }
+
+        return imageLettersWithLargestMatchingSize;
+    }
+
+    private static Map<FontLetter, Map<Size, List<ImgLetter>>> groupEachLetterBySizes(Map<FontLetter, List<ImgLetter>> groupedByLetter) {
+        Map<FontLetter, Map<Size, List<ImgLetter>>> imageLettersGroupBySizes = new HashMap<>();
+
+        for (Map.Entry<FontLetter, List<ImgLetter>> entry : groupedByLetter.entrySet()) {
+            FontLetter letter = entry.getKey();
+            List<ImgLetter> listOfImages = entry.getValue();
+            for (ImgLetter img : listOfImages) {
+                imageLettersGroupBySizes
+                        .computeIfAbsent(letter, k -> new HashMap<>())
+                        .computeIfAbsent(new Size(img.w(), img.h()), k -> new ArrayList<>())
+                        .add(img);
+            }
+        }
+        return imageLettersGroupBySizes;
+    }
+
+    @SneakyThrows
+    private static Map<FontLetter, List<ImgLetter>> getGroupedByLetter(NumberOnReceipt[] numberOnReceipts) {
+        ExecutorService executorService = Executors.newFixedThreadPool(N_THREADS);
+        Map<Path, List<NumberOnReceipt>> groupedByFile = Arrays.stream(numberOnReceipts).collect(Collectors.groupingBy(NumberOnReceipt::filePath));
+        Iterator<List<NumberOnReceipt>> iterator = groupedByFile.values().iterator();
+
+        Map<FontLetter, List<ImgLetter>> groupedByLetter = new HashMap<>();
+
+        while (iterator.hasNext()) {
+            List<NumberOnReceipt> next = iterator.next();
+            for (NumberOnReceipt numberOnReceipt : next) {
+                Path imageFile = numberOnReceipt.filePath();
+                String numberText = numberOnReceipt.numberText();
+                executorService.submit(() -> extractNumberFromFile(numberOnReceipt, imageFile, numberText, groupedByLetter));
+            }
+        }
+
+        if (PRINT_ALL_RECEIPTS_WITH_RECT_AROUND_NUMBERS) {
+            debugPrintAllReceipts(groupedByFile);
+        }
+
+        log.info("Awaiting completion of threads....");
+        executorService.shutdown();
+        while (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+            log.info("Still waiting...");
+        }
+        return groupedByLetter;
+    }
+
+    @SneakyThrows
+    private static NumberOnReceipt[] loadInputFile() {
+        String inputJsonContents = Files.readString(AllNumberCollector.ALL_NUMBER_WORDS_JSON);
+        return JsonUtils
+                .OBJECT_MAPPER
+                .readValue(inputJsonContents, NumberOnReceipt[].class);
+    }
+
+    private static void extractNumberFromFile(NumberOnReceipt numberOnReceipt,
+                                              Path imageFile,
+                                              String numberText,
+                                              Map<FontLetter, List<ImgLetter>> groupedByLetter) {
+        List<ImgLetter> imgLetterList = splitToLetters(imageFile, numberOnReceipt);
+        int symbolCount = numberText.length();
+        if (symbolCount != imgLetterList.size()) {
+            log.info("Count of letters in image and in text does not match: {} : {}", imageFile, numberText);
+            return;
+        }
+
+        for (int i = 0; i < numberText.length(); i++) {
+            ImgLetter imgLetter = imgLetterList.get(i);
+            FontLetter currentLetter = new FontLetter(numberOnReceipt.type(), numberText.substring(i, i + 1));
+            if (SAVE_CATEGORIZED_IMAGES) {
+                saveCategorizedLetterImage(currentLetter, imageFile, imgLetter);
+            }
+            groupedByLetter
+                    .computeIfAbsent(currentLetter, k -> new ArrayList<>())
+                    .add(imgLetter);
+        }
+    }
+
+    private static void saveCategorizedLettersWithLargestSameSize(Map<FontLetter, List<ImgLetter>> imageLettersWithLargestMatchingSize) {
+        Path parentDir = ROOT_DIR
+                .resolve("numbers")
+                .resolve("categorised-selected");
+
+        for (Map.Entry<FontLetter, List<ImgLetter>> entry : imageLettersWithLargestMatchingSize.entrySet()) {
+            FontLetter currentLetter = entry.getKey();
+            List<ImgLetter> images = entry.getValue();
+            for (ImgLetter image : images) {
+                Path fileDirectory = parentDir
+                        .resolve(currentLetter.getFont())
+                        .resolve(currentLetter.getLetter());
+                Path filePath = fileDirectory
+                        .resolve(String.format("%s_x%d_y%d_xx%d_yy%d", image.filePath().getFileName(), image.x(), image.y(), image.endX(), image.endY()) + ".png");
+                createAllDirectories(fileDirectory);
+                IMAGE_CACHE.saveImgLetter(image, filePath);
+            }
+        }
+    }
+
+    private static void saveCategorizedLetterImage(FontLetter currentLetter, Path imageFile, ImgLetter imgLetter) {
+        Path parentDir = ROOT_DIR
+                .resolve("numbers")
+                .resolve("categorised")
+                .resolve(currentLetter.getFont())
+                .resolve(currentLetter.getLetter());
+        Path filePath = parentDir
+                .resolve(String.format("%s_x%d_y%d_xx%d_yy%d", imageFile.getFileName(), imgLetter.x(), imgLetter.y(), imgLetter.endX(), imgLetter.endY()) + ".png");
+
+        createAllDirectories(parentDir);
+        IMAGE_CACHE.saveImgLetter(imgLetter, filePath);
+    }
+
+    @SneakyThrows
+    private static void createAllDirectories(Path parentDir) {
+        Files.createDirectories(parentDir);
+    }
+
+    @SneakyThrows
+    private static void debugPrintAllReceipts(Map<Path, List<NumberOnReceipt>> groupedByFile) {
+        for (Map.Entry<Path, List<NumberOnReceipt>> entry : groupedByFile.entrySet()) {
+            Path file = entry.getKey();
+            List<NumberOnReceipt> items = entry.getValue();
+            BufferedImage image = copyImage(IMAGE_CACHE.loadImage(file));
+            Graphics graphics = image.getGraphics();
+            graphics.setColor(Color.BLACK);
+            for (NumberOnReceipt item : items) {
+                MyRect location = item.location();
+                graphics.drawRect(location.x(), location.y(), location.w(), location.h());
+            }
+            String fileName = file.getFileName().toString();
+            File output = ROOT_DIR.resolve("numbers").resolve(fileName + ".markup.png").toFile();
+            graphics.dispose();
+            ImageIO.write(image, "png", output);
+        }
+    }
+
+    public static BufferedImage copyImage(BufferedImage source) {
+        BufferedImage b = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
+        Graphics g = b.getGraphics();
+        g.drawImage(source, 0, 0, null);
+        g.dispose();
+        return b;
+    }
+
+    @SneakyThrows
+    private static List<ImgLetter> splitToLetters(Path imageFile, NumberOnReceipt num) {
+        MyRect textLocationInFile = num.location();
         List<ImgLetter> result = new ArrayList<>();
-        BufferedImage image = ImageIO.read(imageFile.toFile());
-        showImage(image);
+        BufferedImage image = IMAGE_CACHE.loadImage(imageFile);
         int minX = textLocationInFile.x();
         int maxX = minX + textLocationInFile.w();
         int minY = textLocationInFile.y();
         int maxY = minY + textLocationInFile.h();
-
-        showImage(image.getSubimage(minX, minY, textLocationInFile.w(), textLocationInFile.h()));
 
         int imgStartX = Integer.MAX_VALUE;
         int imgStartY = Integer.MAX_VALUE;
@@ -90,22 +244,7 @@ public class NumberImageStatisticsProcessor {
         for (int x = minX; x <= maxX; x++) {
             if (isColumnWhite(image, x, minY, maxY)) {
                 if (foundBlackDot) {
-                    imgCounter++;
-                    //result.add(new ImgLetter(image, imgStartX, imgStartY, x - 1, imgEndY));
-                    BufferedImage subimage = image.getSubimage(imgStartX, imgStartY, (x - 1 - imgStartX), imgEndY - imgStartY);
-                    showImage(subimage);
-
-                    Path rootDir = AllNumberCollector.OUTPUT_PATH.getParent();
-
-                    String fileName = imageFile.getFileName().toString();
-
-                    File output = rootDir
-                            .resolve("numbers")
-                            .resolve(num.type())
-                            .resolve(String.format("%s_x%d_y%d_xx%d_yy%d", fileName, imgStartX, imgStartY, x - 1, imgEndY) + ".png")
-                            .toFile();
-                    //log.info(output.toPath().toAbsolutePath().toString());
-                    ImageIO.write(subimage, "png", output);
+                    result.add(new ImgLetter(imgStartX, imgStartY, x - 1, imgEndY, num.filePath()));
                 }
                 foundBlackDot = false;
             } else {
@@ -117,7 +256,6 @@ public class NumberImageStatisticsProcessor {
                 foundBlackDot = true;
                 for (int y = minY; y <= maxY; y++) {
                     if (isBlackPixel(image, x, y)) {
-                        imgStartX = Integer.min(imgStartX, x);
                         imgStartY = Integer.min(imgStartY, y);
                         imgEndY = Integer.max(imgEndY, y);
                     }
@@ -126,18 +264,6 @@ public class NumberImageStatisticsProcessor {
         }
 
         return result;
-    }
-
-    private static void showImage(BufferedImage subimage) {
-//        JLabel picLabel = new JLabel(new ImageIcon(subimage));
-//
-//        JPanel jPanel = new JPanel();
-//        jPanel.add(picLabel);
-//
-//        JFrame f = new JFrame();
-//        f.setSize(new Dimension(subimage.getWidth(), subimage.getHeight()));
-//        f.add(jPanel);
-//        f.setVisible(true);
     }
 
     private static boolean isColumnWhite(BufferedImage image, int x, int minY, int maxY) {
@@ -149,11 +275,7 @@ public class NumberImageStatisticsProcessor {
         return true;
     }
 
-    private static boolean isBlackPixel(BufferedImage image, int x, int i) {
-        return (image.getRGB(x, i) & 0x00FFFFFF) == 0;
-    }
-
-    private record ImgLetter(BufferedImage image, int x, int y, int endX, int endY) {
-
+    private static boolean isBlackPixel(BufferedImage image, int x, int y) {
+        return (image.getRGB(x, y) & 0x00FFFFFF) == 0;
     }
 }
