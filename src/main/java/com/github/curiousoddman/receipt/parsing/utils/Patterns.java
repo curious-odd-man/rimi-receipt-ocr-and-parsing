@@ -19,8 +19,11 @@ public class Patterns {
     J1 gab X 5,49 EUR 5,49 A
     _1,210 kg X 1,59 EUR/kg 1,92 A
     0,654 kg X 1,49 EUR/ kg 0,97 F
+    1 gab X 1,45 EU 1,45 A Atl. -0, 46 G
+    1 iep X 39,99 EUR 39,99 A
+    ll gab X 1,49 EUR 1,49 A
      */
-    public static final Pattern COUNT_PRICE_AND_SUM_LINE = Pattern.compile(".?(\\d+([.,]\\d+)?) +(gab|kg)y?g? +X +(\\d+([.,] ?\\d+)?) +\\w{2,3}(/ ?kg)? +(.*)");
+    public static final Pattern COUNT_PRICE_AND_SUM_LINE = Pattern.compile(".?(.*) +(gab|kg|iep)y?g? +X +(\\d+([.,] ?\\d+)?) +\\w{2,3}(/ ?kg)? +(.*)");
 
     /*
     Atī. -0,33 Gala cena 2,89
