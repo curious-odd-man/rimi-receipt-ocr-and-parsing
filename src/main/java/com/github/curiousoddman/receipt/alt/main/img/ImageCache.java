@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.alt.main;
+package com.github.curiousoddman.receipt.alt.main.img;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -28,9 +28,9 @@ public class ImageCache {
     }
 
     @SneakyThrows
-    public void saveImgLetter(ImgLetter imgLetter, Path filePath) {
-        BufferedImage subimage = loadImage(imgLetter.filePath())
-                .getSubimage(imgLetter.x(), imgLetter.y(), imgLetter.w(), imgLetter.h());
+    public void saveImgLetter(LetterInFile letterInFile, Path filePath) {
+        BufferedImage subimage = loadImage(letterInFile.filePath())
+                .getSubimage(letterInFile.x(), letterInFile.y(), letterInFile.w(), letterInFile.h());
         ImageIO.write(subimage, "png", filePath.toFile());
     }
 }

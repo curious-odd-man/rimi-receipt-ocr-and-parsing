@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.alt.main;
+package com.github.curiousoddman.receipt.alt.main.img;
 
 
 import lombok.Getter;

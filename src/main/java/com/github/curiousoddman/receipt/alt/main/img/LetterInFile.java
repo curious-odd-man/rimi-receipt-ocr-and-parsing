@@ -1,8 +1,8 @@
-package com.github.curiousoddman.receipt.alt.main;
+package com.github.curiousoddman.receipt.alt.main.img;
 
 import java.nio.file.Path;
 
-public record ImgLetter(int x, int y, int endX, int endY, Path filePath) {
+public record LetterInFile(int x, int y, int endX, int endY, Path filePath) {
     public int w() {
         return endX - x;
     }
