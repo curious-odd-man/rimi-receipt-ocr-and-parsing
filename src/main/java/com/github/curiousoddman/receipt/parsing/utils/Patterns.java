@@ -20,7 +20,7 @@ public class Patterns {
     _1,210 kg X 1,59 EUR/kg 1,92 A
     0,654 kg X 1,49 EUR/ kg 0,97 F
      */
-    public static final Pattern COUNT_PRICE_AND_SUM_LINE = Pattern.compile(".?(\\d+([.,]\\d+)?) +(gab|kg)y?g? +X +(\\d+([.,]\\d+)?) +EUR(/ ?kg)? +(.*)");
+    public static final Pattern COUNT_PRICE_AND_SUM_LINE = Pattern.compile(".?(\\d+([.,]\\d+)?) +(gab|kg)y?g? +X +(\\d+([.,] ?\\d+)?) +\\w{2,3}(/ ?kg)? +(.*)");
 
     /*
     Atī. -0,33 Gala cena 2,89
