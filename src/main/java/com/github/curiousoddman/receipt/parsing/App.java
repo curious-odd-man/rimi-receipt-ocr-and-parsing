@@ -8,6 +8,7 @@ import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
 import com.github.curiousoddman.receipt.parsing.stats.AllNumberCollector;
 import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
+import com.github.curiousoddman.receipt.parsing.stats.ReceiptStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationExecutor;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationStatsCollector;
@@ -33,14 +34,15 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 @Component
 @RequiredArgsConstructor
 public class App implements ApplicationRunner {
-    private final Pdf2Text           pdf2Text;
-    private final List<Text2Receipt> text2ReceiptList;
-    private final FileCache          fileCache;
-    private final IgnoreList         ignoreList;
-    private final Whitelist          whitelist;
-    private final ValidationExecutor validationExecutor;
-    private final Tsv2Struct         tsv2Struct;
-    private final AllNumberCollector allNumberCollector;
+    private final Pdf2Text                    pdf2Text;
+    private final List<Text2Receipt>          text2ReceiptList;
+    private final FileCache                   fileCache;
+    private final IgnoreList                  ignoreList;
+    private final Whitelist                   whitelist;
+    private final ValidationExecutor          validationExecutor;
+    private final Tsv2Struct                  tsv2Struct;
+    private final AllNumberCollector          allNumberCollector;
+    private final List<ReceiptStatsCollector> receiptStatsCollectors;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -75,12 +77,14 @@ public class App implements ApplicationRunner {
                     fileCache.create(Path.of(sourcePdfName + ".json"), receiptJson);
 
                     validationExecutor.execute(validationStatsCollector, receipt);
+                    receiptStatsCollectors.forEach(collector -> collector.collect(receipt));
                 } else {
                     log.error("Failed to parse receipt {}", sourcePdfName);
                 }
             }
         }
 
+        receiptStatsCollectors.forEach(ReceiptStatsCollector::printSummary);
         parsingStatsCollector.printStats();
         allNumberCollector.saveResult();
     }
