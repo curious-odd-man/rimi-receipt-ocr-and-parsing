@@ -34,7 +34,7 @@ compileJava.options.encoding = 'UTF-8'
 
 dependencies {
     implementation 'org.openpnp:opencv:4.8.1-0'
-    implementation 'net.sourceforge.tess4j:tess4j:5.8.0'
+    implementation 'net.sourceforge.tess4j:tess4j:5.9.0'
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-json'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'

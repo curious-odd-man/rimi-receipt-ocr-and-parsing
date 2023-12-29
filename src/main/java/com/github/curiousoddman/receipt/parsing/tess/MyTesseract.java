@@ -18,6 +18,7 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -148,7 +149,9 @@ public class MyTesseract extends Tesseract {
         String text = "";
 
         try {
-            setImage(oimage.getRenderedImage(), rect);
+            RenderedImage renderedImage = oimage.getRenderedImage();
+            setImage(renderedImage);
+            setROI(rect);
             ITessAPI.TessBaseAPI handle = getHandle();
             TessAPI api = getAPI();
             if (filename != null && !filename.isEmpty()) {
