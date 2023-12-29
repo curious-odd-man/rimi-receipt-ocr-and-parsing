@@ -13,6 +13,7 @@ import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationExecutor;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationStatsCollector;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.boot.ApplicationArguments;
@@ -25,6 +26,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WRITER;
@@ -34,6 +38,8 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 @Component
 @RequiredArgsConstructor
 public class App implements ApplicationRunner {
+    private static final int MAX_PARALLEL_THREADS = 3;
+
     private final Pdf2Text                    pdf2Text;
     private final List<Text2Receipt>          text2ReceiptList;
     private final FileCache                   fileCache;
@@ -50,36 +56,18 @@ public class App implements ApplicationRunner {
         ParsingStatsCollector parsingStatsCollector = new ParsingStatsCollector();
         try (Stream<Path> files = Files.list(Paths.get("D:\\Programming\\git\\private-tools\\gmail-client\\output"))) {
             List<Path> allPdfFiles = files.filter(App::isPdfFile).toList();
-            for (Path pdfFile : allPdfFiles) {
-                String sourcePdfName = pdfFile.toFile().getName();
-                MDC.put("file", sourcePdfName);
-
-                if (ignoreList.isIgnored(sourcePdfName)) {
-                    log.info("Skipping file {} due to ignore list", sourcePdfName);
-                    continue;
+            if (MAX_PARALLEL_THREADS == 0) {
+                for (Path pdfFile : allPdfFiles) {
+                    transformFile(pdfFile, parsingStatsCollector, validationStatsCollector);
                 }
-
-                if (!whitelist.isWhitelisted(sourcePdfName)) {
-                    continue;
+            } else {
+                ExecutorService executorService = Executors.newFixedThreadPool(MAX_PARALLEL_THREADS);
+                for (Path pdfFile : allPdfFiles) {
+                    executorService.submit(() -> transformFile(pdfFile, parsingStatsCollector, validationStatsCollector));
                 }
-
-                log.info("Starting...");
-
-                MyTessResult myTessResult = fileCache.getOrCreate(pdfFile, pdf2Text::convert);
-                TsvDocument tsvDocument = tsv2Struct.parseTsv(myTessResult.getTsvText());
-                myTessResult.setTsvDocument(tsvDocument);
-                fileCache.create(Path.of(sourcePdfName + ".tsv.json"), OBJECT_WRITER.writeValueAsString(tsvDocument));
-                Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, myTessResult, parsingStatsCollector);
-                if (optionalReceipt.isPresent()) {
-                    Receipt receipt = optionalReceipt.get();
-                    String receiptJson = OBJECT_WRITER.writeValueAsString(receipt);
-
-                    fileCache.create(Path.of(sourcePdfName + ".json"), receiptJson);
-
-                    validationExecutor.execute(validationStatsCollector, receipt);
-                    receiptStatsCollectors.forEach(collector -> collector.collect(receipt));
-                } else {
-                    log.error("Failed to parse receipt {}", sourcePdfName);
+                executorService.shutdown();
+                while (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                    log.info("Still running...");
                 }
             }
         }
@@ -87,6 +75,40 @@ public class App implements ApplicationRunner {
         receiptStatsCollectors.forEach(ReceiptStatsCollector::printSummary);
         parsingStatsCollector.printStats();
         allNumberCollector.saveResult();
+    }
+
+    @SneakyThrows
+    private void transformFile(Path pdfFile, ParsingStatsCollector parsingStatsCollector, ValidationStatsCollector validationStatsCollector) {
+        String sourcePdfName = pdfFile.toFile().getName();
+        MDC.put("file", sourcePdfName);
+
+        if (ignoreList.isIgnored(sourcePdfName)) {
+            log.info("Skipping file {} due to ignore list", sourcePdfName);
+            return;
+        }
+
+        if (!whitelist.isWhitelisted(sourcePdfName)) {
+            return;
+        }
+
+        log.info("Starting...");
+
+        MyTessResult myTessResult = fileCache.getOrCreate(pdfFile, pdf2Text::convert);
+        TsvDocument tsvDocument = tsv2Struct.parseTsv(myTessResult.getTsvText());
+        myTessResult.setTsvDocument(tsvDocument);
+        fileCache.create(Path.of(sourcePdfName + ".tsv.json"), OBJECT_WRITER.writeValueAsString(tsvDocument));
+        Optional<Receipt> optionalReceipt = parseWithAnyParser(sourcePdfName, myTessResult, parsingStatsCollector);
+        if (optionalReceipt.isPresent()) {
+            Receipt receipt = optionalReceipt.get();
+            String receiptJson = OBJECT_WRITER.writeValueAsString(receipt);
+
+            fileCache.create(Path.of(sourcePdfName + ".json"), receiptJson);
+
+            validationExecutor.execute(validationStatsCollector, receipt);
+            receiptStatsCollectors.forEach(collector -> collector.collect(receipt));
+        } else {
+            log.error("Failed to parse receipt {}", sourcePdfName);
+        }
     }
 
 

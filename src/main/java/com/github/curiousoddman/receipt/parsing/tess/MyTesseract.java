@@ -150,8 +150,8 @@ public class MyTesseract extends Tesseract {
 
         try {
             RenderedImage renderedImage = oimage.getRenderedImage();
-            setImage(renderedImage);
-            setROI(rect);
+            setImage(renderedImage, rect);
+//            setROI(rect);
             ITessAPI.TessBaseAPI handle = getHandle();
             TessAPI api = getAPI();
             if (filename != null && !filename.isEmpty()) {
