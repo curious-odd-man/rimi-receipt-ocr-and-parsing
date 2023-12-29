@@ -34,8 +34,15 @@ public class Patterns {
     _Atli -1,32
     „Atl.
     Atl. -0, 20 ala cena 0,79
+
+    tl. -0, 20 Gala cena 1,19
+    tl. -1, 20 Gala cena 1,99
+    Atī. -0,45 "Gala cena 0,90
+    Atl1l. -0,39 Gala cena 0,76
+    Atl. 4,55 Gala cena 6,36
+    Atl. -0, 46 Gara cena 1,09
      */
-    public static final Pattern ITEM_DISCOUNT_LINE_PATTERN = Pattern.compile(".?....\\s+-*(-.*)\\s+G?ala\\s+cena\\s+(.*)");
+    public static final Pattern ITEM_DISCOUNT_LINE_PATTERN = Pattern.compile(".{1,6}\\s+-*(-?.*)\\s+\"?G?a.a\\s+cena\\s+(.*)");
 
     public static final Pattern PAYMENT_SUM              = Pattern.compile("Samaksai EUR +(.*)");
     public static final Pattern TOTAL_CARD_AMOUNT        = Pattern.compile("KOPA: +(\\d+[.,]\\d+) +EUR.*");
