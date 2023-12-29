@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.opencv.highgui.HighGui.toBufferedImage;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_GRAYSCALE;
 import static org.opencv.imgproc.Imgproc.THRESH_BINARY;
 
@@ -43,11 +44,11 @@ public class OpenCvUtils {
                           255,
                           THRESH_BINARY);       // THRESH_BINARY
 
-        saveImage(dstMat, targetImage.toAbsolutePath().toString());
-        BufferedImage bufferedImage = ImageIO.read(targetImage.toFile());
-        //BufferedImage bufferedImage = (BufferedImage) toBufferedImage(dstMat);
-//        BufferedImage transformedImage = addSpaceBetweenLines(bufferedImage, targetImage);
-//        ImageIO.write(transformedImage, "tiff", targetImage.toFile());
+        //saveImage(dstMat, targetImage.toAbsolutePath().toString());
+        //BufferedImage bufferedImage = ImageIO.read(targetImage.toFile());
+        BufferedImage bufferedImage = (BufferedImage) toBufferedImage(dstMat);
+        BufferedImage transformedImage = addSpaceBetweenLines(bufferedImage, targetImage);
+        ImageIO.write(transformedImage, "tiff", targetImage.toFile());
     }
 
     @SneakyThrows

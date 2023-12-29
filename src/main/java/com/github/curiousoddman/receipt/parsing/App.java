@@ -38,7 +38,7 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 @Component
 @RequiredArgsConstructor
 public class App implements ApplicationRunner {
-    private static final int MAX_PARALLEL_THREADS = 3;
+    private static final int MAX_PARALLEL_THREADS = 1;
 
     private final Pdf2Text                    pdf2Text;
     private final List<Text2Receipt>          text2ReceiptList;
