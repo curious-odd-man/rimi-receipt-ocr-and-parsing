@@ -10,8 +10,9 @@ import java.nio.file.Path;
 import static net.sourceforge.tess4j.ITessAPI.TessOcrEngineMode.OEM_LSTM_ONLY;
 import static net.sourceforge.tess4j.ITessAPI.TessPageSegMode.PSM_AUTO_OSD;
 
-@Builder(builderMethodName = "hiddenBuilder")
+
 @Getter
+@Builder(builderMethodName = "hiddenBuilder")
 public class OcrConfig {
     private final Path      tiffFile;
     private final Rectangle ocrArea;

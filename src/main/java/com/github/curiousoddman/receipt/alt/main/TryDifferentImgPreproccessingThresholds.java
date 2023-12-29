@@ -7,8 +7,8 @@ import org.opencv.imgproc.Imgproc;
 
 import java.nio.file.Path;
 
-import static com.github.curiousoddman.receipt.parsing.opencv.OpenCvUtils.loadImage;
-import static com.github.curiousoddman.receipt.parsing.opencv.OpenCvUtils.saveImage;
+import static com.github.curiousoddman.receipt.parsing.utils.ImageUtils.loadImage;
+import static com.github.curiousoddman.receipt.parsing.utils.ImageUtils.saveImage;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_GRAYSCALE;
 import static org.opencv.imgproc.Imgproc.*;
 

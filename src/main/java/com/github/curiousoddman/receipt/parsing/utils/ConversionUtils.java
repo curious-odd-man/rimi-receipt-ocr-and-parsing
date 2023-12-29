@@ -3,7 +3,6 @@ package com.github.curiousoddman.receipt.parsing.utils;
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.model.MyLocalDateTime;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;

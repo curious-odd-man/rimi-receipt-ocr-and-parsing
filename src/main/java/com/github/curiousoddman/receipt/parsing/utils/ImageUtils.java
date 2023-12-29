@@ -1,8 +1,9 @@
-package com.github.curiousoddman.receipt.parsing.opencv;
+package com.github.curiousoddman.receipt.parsing.utils;
 
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import net.sourceforge.tess4j.util.ImageIOHelper;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -10,18 +11,18 @@ import org.opencv.imgproc.Imgproc;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.opencv.highgui.HighGui.toBufferedImage;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_GRAYSCALE;
 import static org.opencv.imgproc.Imgproc.THRESH_BINARY;
 
 @Slf4j
-public class OpenCvUtils {
+public class ImageUtils {
 
     public static final int BLANK_PIXELS_BETWEEN_ROWS = 30;
 
@@ -44,11 +45,11 @@ public class OpenCvUtils {
                           255,
                           THRESH_BINARY);       // THRESH_BINARY
 
-        //saveImage(dstMat, targetImage.toAbsolutePath().toString());
+        saveImage(dstMat, targetImage.toAbsolutePath().toString());
         //BufferedImage bufferedImage = ImageIO.read(targetImage.toFile());
-        BufferedImage bufferedImage = (BufferedImage) toBufferedImage(dstMat);
-        BufferedImage transformedImage = addSpaceBetweenLines(bufferedImage, targetImage);
-        ImageIO.write(transformedImage, "tiff", targetImage.toFile());
+//        BufferedImage bufferedImage = (BufferedImage) toBufferedImage(dstMat);
+//        BufferedImage transformedImage = addSpaceBetweenLines(bufferedImage, targetImage);
+//        ImageIO.write(transformedImage, "tiff", targetImage.toFile());
     }
 
     @SneakyThrows
@@ -151,5 +152,21 @@ public class OpenCvUtils {
                     ", chgLocs=" + changeLocation +
                     '}';
         }
+    }
+
+    @SneakyThrows
+    public static File getImageFile(File inputFile) {
+        return ImageIOHelper.getImageFile(inputFile);
+    }
+
+    @SneakyThrows
+    private static void saveFileWithRectangle(File inputFile, Path rectangledFileName, int x, int y, int width, int height) {
+        Files.copy(inputFile.toPath(), rectangledFileName);
+        BufferedImage img = ImageIO.read(rectangledFileName.toFile());
+        Graphics2D g2d = img.createGraphics();
+        g2d.setColor(Color.RED);
+        g2d.drawRect(x, y, width, height);
+        g2d.dispose();
+        ImageIO.write(img, "tiff", rectangledFileName.toFile());
     }
 }

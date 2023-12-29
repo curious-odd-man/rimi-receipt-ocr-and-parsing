@@ -4,19 +4,20 @@ import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class ValidationStatsCollector {
-    private int successes;
-    private int failures;
+    private final AtomicInteger successes = new AtomicInteger();
+    private final AtomicInteger failures  = new AtomicInteger();
 
     public void recordSuccess(Receipt receipt) {
-        successes += 1;
+        successes.addAndGet(1);
         reportStats();
     }
 
     public void recordFailure(Receipt receipt, List<ValidationResult> validationResult) {
-        failures += 1;
+        failures.addAndGet(1);
         reportStats();
         log.error("Reporting errors for receipt {}", receipt.getFileName());
         validationResult

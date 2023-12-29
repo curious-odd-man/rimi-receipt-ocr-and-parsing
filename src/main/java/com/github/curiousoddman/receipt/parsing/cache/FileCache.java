@@ -1,7 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.cache;
 
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
-import com.github.curiousoddman.receipt.parsing.opencv.OpenCvUtils;
+import com.github.curiousoddman.receipt.parsing.utils.ImageUtils;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
 import lombok.SneakyThrows;
@@ -13,7 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.BiFunction;
 
-import static com.github.curiousoddman.receipt.parsing.tess.MyTesseract.getImageFile;
+import static com.github.curiousoddman.receipt.parsing.utils.ImageUtils.getImageFile;
 
 @Slf4j
 @Component
@@ -49,7 +49,7 @@ public class FileCache {
 
 
         if (!Files.exists(preprocessedImagePath)) {
-            OpenCvUtils.doImagePreprocessing(imageCacheFilePath, preprocessedImagePath);
+            ImageUtils.doImagePreprocessing(imageCacheFilePath, preprocessedImagePath);
         }
 
         OcrConfig ocrConfig = OcrConfig.builder(originFile.preprocessedTiff()).build();

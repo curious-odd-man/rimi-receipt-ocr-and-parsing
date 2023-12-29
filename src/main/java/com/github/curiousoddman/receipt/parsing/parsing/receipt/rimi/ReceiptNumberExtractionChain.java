@@ -1,6 +1,6 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
-import com.github.curiousoddman.receipt.parsing.parsing.LocationCorrection;
+import com.github.curiousoddman.receipt.parsing.parsing.NumberOcrResult;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvLine;
@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-import static com.github.curiousoddman.receipt.parsing.parsing.LocationCorrection.NO_CORRECTION;
 import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.isFormatValid;
 import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.toMyBigDecimal;
 
@@ -31,8 +30,6 @@ public class ReceiptNumberExtractionChain {
     private final Pattern            expectedFormat;
     private final RimiContext        context;
     private final Consumer<TsvWord>  tsvWordConsumer;
-    private final LocationCorrection locationCorrection;
-    private final MyTesseract        tesseract;
     private final Tsv2Struct         tsv2Struct;
     private final AllNumberCollector allNumberCollector;
 
@@ -83,7 +80,7 @@ public class ReceiptNumberExtractionChain {
                     .ocrDigitsOnly(true)
                     .ocrArea(originalWordRectangle)
                     .build();
-            value = tesseract.doOCR(ocrConfig);
+            value = context.getTesseract().doOCR(ocrConfig);
             if (isFormatValid(expectedFormat, value)) {
                 tsvWordConsumer.accept(originalWord);
                 allNumberCollector.add(context.getOriginFile().preprocessedTiff(), type, value, originalWordRectangle);
@@ -108,7 +105,7 @@ public class ReceiptNumberExtractionChain {
                     .ocrToTsv(true)
                     .build();
             // Finally try to re-ocr whole line and get the word by the same word num.
-            String tsvText = tesseract.doOCR(ocrConfig);
+            String tsvText = context.getTesseract().doOCR(ocrConfig);
             TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
             List<TsvLine> lines = tsvDocument.getLines();
             line = lines.get(lines.size() - 1);     // Rectangle of line is streched up, touching previous line, that appears here as well.
@@ -126,35 +123,6 @@ public class ReceiptNumberExtractionChain {
         } catch (Exception ex) {
             triedValues.add(ex.getMessage());
             log.error(ex.getMessage(), ex);
-        }
-
-        //return reOcrWordLineInOriginalTiff(originalWord, wordIndexInLine, type);
-        return reOcrByCorrection(originalWord);
-    }
-
-    private NumberOcrResult reOcrByCorrection(TsvWord originalWord) {
-        Rectangle originalWordRectangle = originalWord.getWordRect();
-        String text = null;
-        if (locationCorrection != NO_CORRECTION) {
-            // Additionally try to re-ocr by expected location based on statistics in locations-stats.txt
-            Rectangle correctedLocation = locationCorrection.getCorrectedLocation(originalWordRectangle);
-            try {
-                OcrConfig ocrConfig = OcrConfig
-                        .builder(context.getOriginFile().preprocessedTiff())
-                        .ocrArea(correctedLocation)
-                        .ocrDigitsOnly(true)
-                        .build();
-                text = tesseract.doOCR(ocrConfig);
-                if (isFormatValid(expectedFormat, text)) {
-                    tsvWordConsumer.accept(originalWord);
-                    return NumberOcrResult.of(toMyBigDecimal(text), originalWordRectangle);
-                }
-            } catch (TesseractException ex) {
-                triedValues.add(ex.getMessage());
-                log.error(ex.getMessage(), ex);
-            }
-
-            triedValues.add("ocr corrected location: " + text);
         }
 
         return NumberOcrResult.ofError("Failed to extract number", triedValues);

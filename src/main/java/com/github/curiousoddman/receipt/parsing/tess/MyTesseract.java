@@ -1,6 +1,5 @@
 package com.github.curiousoddman.receipt.parsing.tess;
 
-import com.github.curiousoddman.receipt.parsing.cache.FileCache;
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.sun.jna.Pointer;
 import lombok.SneakyThrows;
@@ -10,27 +9,22 @@ import net.sourceforge.tess4j.TessAPI;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 import net.sourceforge.tess4j.util.ImageIOHelper;
-import org.springframework.stereotype.Component;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Properties;
 
 @Slf4j
-@Component
 public class MyTesseract extends Tesseract {
-    public MyTesseract(FileCache fileCache) {
+    public MyTesseract() {
         setDatapath("D:\\Programming\\git\\private-tools\\receipts-parsing\\tes");
         setLanguage("lav");
     }
@@ -73,11 +67,6 @@ public class MyTesseract extends Tesseract {
             log.error(e.getMessage(), e);
             throw new TesseractException(e);
         }
-    }
-
-    @SneakyThrows
-    public static File getImageFile(File inputFile) {
-        return ImageIOHelper.getImageFile(inputFile);
     }
 
     @Override
@@ -175,14 +164,4 @@ public class MyTesseract extends Tesseract {
         return text;
     }
 
-    @SneakyThrows
-    private static void saveFileWithRectangle(File inputFile, Path rectangledFileName, int x, int y, int width, int height) {
-        Files.copy(inputFile.toPath(), rectangledFileName);
-        BufferedImage img = ImageIO.read(rectangledFileName.toFile());
-        Graphics2D g2d = img.createGraphics();
-        g2d.setColor(Color.RED);
-        g2d.drawRect(x, y, width, height);
-        g2d.dispose();
-        ImageIO.write(img, "tiff", rectangledFileName.toFile());
-    }
 }

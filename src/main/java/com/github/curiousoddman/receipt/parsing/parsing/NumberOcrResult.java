@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
+package com.github.curiousoddman.receipt.parsing.parsing;
 
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import lombok.Data;
