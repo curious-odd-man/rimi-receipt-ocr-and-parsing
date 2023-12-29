@@ -5,14 +5,14 @@ import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 @Slf4j
 @Component
 public class ReceiptItemDescriptionCollector implements ReceiptStatsCollector {
-    private final Set<String> descriptions = new HashSet<>();
+    private final Set<String> descriptions = new ConcurrentSkipListSet<>();
 
     @Override
     public void printSummary() {

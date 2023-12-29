@@ -18,11 +18,11 @@ public class AllNumberCollector {
 
     private final List<NumberOnReceipt> numberOnReceipts = new ArrayList<>();
 
-    public void add(Path filePath, String type, TsvWord word) {
+    public synchronized void add(Path filePath, String type, TsvWord word) {
         numberOnReceipts.add(new NumberOnReceipt(filePath, type, word.getText(), MyRect.of(word.getWordRect())));
     }
 
-    public void add(Path filePath, String type, String text, Rectangle rectangle) {
+    public synchronized void add(Path filePath, String type, String text, Rectangle rectangle) {
         numberOnReceipts.add(new NumberOnReceipt(filePath, type, text, MyRect.of(rectangle)));
     }
 

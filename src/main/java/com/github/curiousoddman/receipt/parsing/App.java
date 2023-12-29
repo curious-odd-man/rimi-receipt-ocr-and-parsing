@@ -79,6 +79,7 @@ public class App implements ApplicationRunner {
         receiptStatsCollectors.forEach(ReceiptStatsCollector::printSummary);
         parsingStatsCollector.printStats();
         allNumberCollector.saveResult();
+        validationExecutor.saveResult(Path.of("D:\\Programming\\git\\caches\\validation-result.json"));
     }
 
     private void safeTransformFile(Path pdfFile, ParsingStatsCollector parsingStatsCollector, ValidationStatsCollector validationStatsCollector) {
