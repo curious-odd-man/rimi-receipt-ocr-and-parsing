@@ -15,12 +15,23 @@ public class NumberOcrResult {
     private final MyBigDecimal number;
     private final Rectangle    location;
     private final List<String> triedValues;
+    private final int          subsequntWordIndexOffset;
 
     public static NumberOcrResult of(MyBigDecimal number, Rectangle location) {
         return new NumberOcrResult(
                 number,
                 location,
-                null
+                null,
+                0
+        );
+    }
+
+    public static NumberOcrResult of(MyBigDecimal number, Rectangle location, int subsequntWordIndexOffset) {
+        return new NumberOcrResult(
+                number,
+                location,
+                null,
+                subsequntWordIndexOffset
         );
     }
 
@@ -28,7 +39,8 @@ public class NumberOcrResult {
         return new NumberOcrResult(
                 MyBigDecimal.error(errorText),
                 null,
-                null
+                null,
+                0
         );
     }
 
@@ -36,7 +48,8 @@ public class NumberOcrResult {
         return new NumberOcrResult(
                 MyBigDecimal.error(errorText),
                 null,
-                triedValues
+                triedValues,
+                0
         );
     }
 

@@ -7,21 +7,22 @@ import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 @Slf4j
 public class ParsingStatsCollector {
-    private final Map<OriginFile, TsvLine>       shopNameLocations                  = new HashMap<>();
-    private final Map<OriginFile, TsvLine>       cashRegisterNumberLocations        = new HashMap<>();
-    private final Map<OriginFile, TsvWord>       totalSavingsLocations              = new HashMap<>();
-    private final Map<OriginFile, TsvWord>       brandMoneyLocations                = new HashMap<>();
-    private final Map<OriginFile, TsvLine>       documentNumberLocations            = new HashMap<>();
-    private final Map<OriginFile, List<TsvWord>> itemFinalCostLocations             = new HashMap<>();
-    private final Map<OriginFile, List<TsvWord>> itemFinalCostWithDiscountLocations = new HashMap<>();
-    private final Map<OriginFile, List<TsvWord>> itemDiscountLocations              = new HashMap<>();
-    private final Map<OriginFile, List<TsvWord>> itemCountLocations                 = new HashMap<>();
-    private final Map<OriginFile, List<TsvWord>> itemPricePerUnitLocations          = new HashMap<>();
-    private final Map<OriginFile, List<TsvWord>> itemUnitsLocations                 = new HashMap<>();
+    private final Map<OriginFile, TsvLine>       shopNameLocations                  = new ConcurrentHashMap<>();
+    private final Map<OriginFile, TsvLine>       cashRegisterNumberLocations        = new ConcurrentHashMap<>();
+    private final Map<OriginFile, TsvWord>       totalSavingsLocations              = new ConcurrentHashMap<>();
+    private final Map<OriginFile, TsvWord>       brandMoneyLocations                = new ConcurrentHashMap<>();
+    private final Map<OriginFile, TsvLine>       documentNumberLocations            = new ConcurrentHashMap<>();
+    private final Map<OriginFile, List<TsvWord>> itemFinalCostLocations             = new ConcurrentHashMap<>();
+    private final Map<OriginFile, List<TsvWord>> itemFinalCostWithDiscountLocations = new ConcurrentHashMap<>();
+    private final Map<OriginFile, List<TsvWord>> itemDiscountLocations              = new ConcurrentHashMap<>();
+    private final Map<OriginFile, List<TsvWord>> itemCountLocations                 = new ConcurrentHashMap<>();
+    private final Map<OriginFile, List<TsvWord>> itemPricePerUnitLocations          = new ConcurrentHashMap<>();
+    private final Map<OriginFile, List<TsvWord>> itemUnitsLocations                 = new ConcurrentHashMap<>();
 
 
     public void printStats() {

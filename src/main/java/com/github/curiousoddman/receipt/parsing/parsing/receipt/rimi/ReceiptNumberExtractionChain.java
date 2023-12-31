@@ -62,7 +62,8 @@ public class ReceiptNumberExtractionChain {
                 allNumberCollector.add(context.getOriginFile().preprocessedTiff(), type, combinedWords, wordRect);
                 return NumberOcrResult.of(
                         toMyBigDecimal(combinedWords),
-                        wordRect);
+                        wordRect,
+                        1);
             }
 
             triedValues.add("original combined with next: " + combinedWords);

@@ -406,25 +406,26 @@ public class RimiText2Receipt {
                                          TsvLine discountLine,
                                          TsvLine priceLine,
                                          List<String> itemNameBuilder) {
+        TsvWord unitsTsvWord = priceLine
+                .getWordByWordNum(2)
+                .orElseThrow();
+        String unitsWord = unitsTsvWord.getText();
+        Optional<TsvWord> countText = priceLine.getWordByWordNum(1);
+        NumberOcrResult countOcrResult = getNumberFromReceiptAndReportError(countText, unitsWord.equalsIgnoreCase("gab") ? INTEGER : WEIGHT, context, context::collectItemCountLocation, 0, "s");
+        Optional<TsvWord> pricePerUnitText = priceLine.getWordByWordNum(4 + countOcrResult.getSubsequntWordIndexOffset());
+        NumberOcrResult pricePerUnitOcrResult = getNumberFromReceiptAndReportError(pricePerUnitText, MONEY_AMOUNT, context, context::collectPricePerUnitLocation, 3 + countOcrResult.getSubsequntWordIndexOffset(), "s");
+
         NumberOcrResult finalCostOcrResult;
         NumberOcrResult discountOcrResult = NumberOcrResult.of(MyBigDecimal.zero(), null);
         if (discountLine != null) {
             finalCostOcrResult = getNumberFromReceiptAndReportError(discountLine.getWordByIndex(-1), MONEY_AMOUNT, context, context::collectItemFinalCostWithDiscountLocation, -1, "s");
             discountOcrResult = getNumberFromReceiptAndReportError(discountLine.getWordByWordNum(2), MONEY_AMOUNT, context, context::collectItemDiscountLocation, 1, "s");
         } else {
-            Optional<TsvWord> finalCostGroupValue = priceLine.getWordByWordNum(6);
+            Optional<TsvWord> finalCostGroupValue = priceLine.getWordByWordNum(6 + countOcrResult.getSubsequntWordIndexOffset());
             finalCostOcrResult = getNumberFromReceiptAndReportError(finalCostGroupValue, MONEY_AMOUNT, context, context::collectItemFinalCostLocation, 5, "s");
         }
 
-        Optional<TsvWord> countText = priceLine.getWordByWordNum(1);
-        Optional<TsvWord> pricePerUnitText = priceLine.getWordByWordNum(4);
-        TsvWord unitsTsvWord = priceLine
-                .getWordByWordNum(2)
-                .orElseThrow();
-        String unitsWord = unitsTsvWord.getText();
         context.collectItemUnitsLocation(unitsTsvWord);
-        NumberOcrResult countOcrResult = getNumberFromReceiptAndReportError(countText, unitsWord.equalsIgnoreCase("gab") ? INTEGER : WEIGHT, context, context::collectItemCountLocation, 0, "s");
-        NumberOcrResult pricePerUnitOcrResult = getNumberFromReceiptAndReportError(pricePerUnitText, MONEY_AMOUNT, context, context::collectPricePerUnitLocation, 3, "s");
         ReceiptItem item = ReceiptItem
                 .builder()
                 .description(Strings.join(itemNameBuilder, ' ').trim())

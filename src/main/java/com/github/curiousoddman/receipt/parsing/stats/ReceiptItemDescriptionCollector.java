@@ -16,10 +16,10 @@ public class ReceiptItemDescriptionCollector implements ReceiptStatsCollector {
 
     @Override
     public void printSummary() {
-        log.info("List of all unique descriptions");
-        for (String description : descriptions) {
-            log.info("\t{}", description);
-        }
+//        log.info("List of all unique descriptions");
+//        for (String description : descriptions) {
+//            log.info("\t{}", description);
+//        }
     }
 
     @Override
