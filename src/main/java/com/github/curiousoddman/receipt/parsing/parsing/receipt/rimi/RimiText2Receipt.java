@@ -170,8 +170,6 @@ public class RimiText2Receipt {
             List<TsvWord> words = new ArrayList<>(tsvLine.getWords());
             TsvWord amountWord = words.get(words.size() - 1);
             int indexOfDiscountAmountEnd = amountWord.getX() + amountWord.getWidth();
-            log.info("Discount amount end: {}", indexOfDiscountAmountEnd);
-
             if (indexOfDiscountAmountEnd < 1300 && indexOfDiscountAmountEnd > 1260) {
                 NumberOcrResult amountNumber = getNumberFromReceiptAndReportError(amountWord,
                                                                                   NUMBER_PATTERN,
