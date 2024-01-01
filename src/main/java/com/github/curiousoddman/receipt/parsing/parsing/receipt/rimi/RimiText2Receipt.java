@@ -411,7 +411,8 @@ public class RimiText2Receipt {
                 .orElseThrow();
         String unitsWord = unitsTsvWord.getText();
         Optional<TsvWord> countText = priceLine.getWordByWordNum(1);
-        NumberOcrResult countOcrResult = getNumberFromReceiptAndReportError(countText, unitsWord.equalsIgnoreCase("gab") ? INTEGER : WEIGHT, context, context::collectItemCountLocation, 0, "s");
+        Pattern numberPattern = getNumberPattern(unitsWord);
+        NumberOcrResult countOcrResult = getNumberFromReceiptAndReportError(countText, numberPattern, context, context::collectItemCountLocation, 0, "s");
         Optional<TsvWord> pricePerUnitText = priceLine.getWordByWordNum(4 + countOcrResult.getSubsequntWordIndexOffset());
         NumberOcrResult pricePerUnitOcrResult = getNumberFromReceiptAndReportError(pricePerUnitText, MONEY_AMOUNT, context, context::collectPricePerUnitLocation, 3 + countOcrResult.getSubsequntWordIndexOffset(), "s");
 
@@ -445,6 +446,13 @@ public class RimiText2Receipt {
                 pricePerUnitOcrResult
 
         );
+    }
+
+    private static Pattern getNumberPattern(String unitsWord) {
+        return switch (unitsWord.toLowerCase(Locale.ROOT)) {
+            case "gab", "iep" -> INTEGER;
+            default -> WEIGHT;
+        };
     }
 
     private ReceiptItem tryOcrNumbersAgain(RimiContext context, ReceiptItemResult receiptItemResult) {
