@@ -422,8 +422,9 @@ public class RimiText2Receipt {
             finalCostOcrResult = getNumberFromReceiptAndReportError(discountLine.getWordByIndex(-1), MONEY_AMOUNT, context, context::collectItemFinalCostWithDiscountLocation, -1, "s");
             discountOcrResult = getNumberFromReceiptAndReportError(discountLine.getWordByWordNum(2), MONEY_AMOUNT, context, context::collectItemDiscountLocation, 1, "s");
         } else {
-            Optional<TsvWord> finalCostGroupValue = priceLine.getWordByWordNum(6 + countOcrResult.getSubsequntWordIndexOffset());
-            finalCostOcrResult = getNumberFromReceiptAndReportError(finalCostGroupValue, MONEY_AMOUNT, context, context::collectItemFinalCostLocation, 5, "s");
+            int additionalWordIndexOffset = countOcrResult.getSubsequntWordIndexOffset() + pricePerUnitOcrResult.getSubsequntWordIndexOffset();
+            Optional<TsvWord> finalCostGroupValue = priceLine.getWordByWordNum(6 + additionalWordIndexOffset);
+            finalCostOcrResult = getNumberFromReceiptAndReportError(finalCostGroupValue, MONEY_AMOUNT, context, context::collectItemFinalCostLocation, 5 + additionalWordIndexOffset, "s");
         }
 
         context.collectItemUnitsLocation(unitsTsvWord);
