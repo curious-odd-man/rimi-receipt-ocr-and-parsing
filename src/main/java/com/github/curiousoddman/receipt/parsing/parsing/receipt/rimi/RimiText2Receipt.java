@@ -169,20 +169,23 @@ public class RimiText2Receipt {
         for (TsvLine tsvLine : linesBetween) {
             List<TsvWord> words = new ArrayList<>(tsvLine.getWords());
             TsvWord amountWord = words.get(words.size() - 1);
-            NumberOcrResult amountNumber = getNumberFromReceiptAndReportError(amountWord,
-                                                                              NUMBER_PATTERN,
-                                                                              context,
-                                                                              NOOP_CONSUMER,
-                                                                              -1,
-                                                                              "s");
-            if (amountNumber.isError()) {
-                discountNameBuilder.addAll(tsvLine.getWords());
-            } else {
+            int indexOfDiscountAmountEnd = amountWord.getX() + amountWord.getWidth();
+            log.info("Discount amount end: {}", indexOfDiscountAmountEnd);
+
+            if (indexOfDiscountAmountEnd < 1300 && indexOfDiscountAmountEnd > 1260) {
+                NumberOcrResult amountNumber = getNumberFromReceiptAndReportError(amountWord,
+                                                                                  NUMBER_PATTERN,
+                                                                                  context,
+                                                                                  NOOP_CONSUMER,
+                                                                                  -1,
+                                                                                  "s");
                 words.remove(words.size() - 1);
                 discountNameBuilder.addAll(words);
                 String name = discountNameBuilder.stream().map(TsvWord::getText).collect(Collectors.joining(" "));
                 discounts.put(Translations.translateDiscountName(name), amountNumber.getNumber());
                 discountNameBuilder.clear();
+            } else {
+                discountNameBuilder.addAll(tsvLine.getWords());
             }
         }
         if (!discountNameBuilder.isEmpty()) {
