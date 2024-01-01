@@ -77,7 +77,6 @@ public class RimiText2Receipt {
                 .documentNumber(getDocumentNumber(context))
                 .receiptDateTime(getReceiptDateTime(context))
                 .discounts(getDiscounts(context))
-                .depositCouponPayment(getDepositCouponPayment(context).getNumber())
                 .items(getItems(context))
                 .paymentMethods(getPaymentMethods(context))
                 .build();
@@ -161,20 +160,6 @@ public class RimiText2Receipt {
 //            MyBigDecimal value = ConversionUtils.pickMostFrequent(bankCardAmount.orElse(null), paymentAmount.orElse(null), totalAmount.orElse(null));
 //            receipt.setTotalPayment(value);
 //        }
-    }
-
-    protected NumberOcrResult getDepositCouponPayment(RimiContext context) {
-        Optional<TsvLine> couponLine = context.getLineMatching(Pattern.compile("Depoz.ta\\s+kupons\\s+"), 0);
-        return couponLine
-                .map(tsvLine -> getNumberFromReceiptAndReportError(tsvLine.getWordByIndex(-1),
-                                                                   NUMBER_PATTERN,
-                                                                   context,
-                                                                   NOOP_CONSUMER,
-                                                                   -1,
-                                                                   "s"
-                )).orElseGet(() -> NumberOcrResult.of(
-                        MyBigDecimal.zero(),
-                        null));
     }
 
     protected Map<String, MyBigDecimal> getDiscounts(RimiContext context) {

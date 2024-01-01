@@ -17,7 +17,6 @@ public class Receipt {
     private MyBigDecimal                    totalSavings;
     private MyBigDecimal                    totalPayment;
     private MyBigDecimal                    usedShopBrandMoney;
-    private MyBigDecimal                    depositCouponPayment;
     private MyBigDecimal                    totalAmount;
     private Map<String, List<MyBigDecimal>> paymentMethods;
     private MyBigDecimal                    shopBrandMoneyAccumulated;
