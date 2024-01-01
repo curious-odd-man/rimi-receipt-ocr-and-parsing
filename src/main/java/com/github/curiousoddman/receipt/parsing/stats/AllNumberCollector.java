@@ -28,7 +28,7 @@ public class AllNumberCollector {
 
     @SneakyThrows
     public void saveResult() {
-        String jsonText = JsonUtils.OBJECT_WRITER.writeValueAsString(numberOnReceipts);
-        Files.writeString(ALL_NUMBER_WORDS_JSON, jsonText, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+        //String jsonText = JsonUtils.OBJECT_WRITER.writeValueAsString(numberOnReceipts);
+       // Files.writeString(ALL_NUMBER_WORDS_JSON, jsonText, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
     }
 }

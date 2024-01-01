@@ -10,20 +10,20 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Receipt {
-    private String                    fileName;
-    private String                    shopBrand;
-    private String                    shopName;
-    private String                    cashRegisterNumber;
-    private MyBigDecimal              totalSavings;
-    private MyBigDecimal              totalPayment;
-    private MyBigDecimal              usedShopBrandMoney;
-    private MyBigDecimal              depositCouponPayment;
-    private MyBigDecimal              totalAmount;
-    private Map<String, MyBigDecimal> paymentMethods;
-    private MyBigDecimal              shopBrandMoneyAccumulated;
-    private String                    documentNumber;
-    private MyLocalDateTime           receiptDateTime;
-    private Map<String, MyBigDecimal> discounts;
+    private String                          fileName;
+    private String                          shopBrand;
+    private String                          shopName;
+    private String                          cashRegisterNumber;
+    private MyBigDecimal                    totalSavings;
+    private MyBigDecimal                    totalPayment;
+    private MyBigDecimal                    usedShopBrandMoney;
+    private MyBigDecimal                    depositCouponPayment;
+    private MyBigDecimal                    totalAmount;
+    private Map<String, List<MyBigDecimal>> paymentMethods;
+    private MyBigDecimal                    shopBrandMoneyAccumulated;
+    private String                          documentNumber;
+    private MyLocalDateTime                 receiptDateTime;
+    private Map<String, MyBigDecimal>       discounts;
 
     @Singular
     private List<ReceiptItem> items;

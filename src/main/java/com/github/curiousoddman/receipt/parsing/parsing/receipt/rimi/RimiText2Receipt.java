@@ -16,6 +16,7 @@ import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
 import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
 import com.github.curiousoddman.receipt.parsing.utils.Constants;
 import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
+import com.github.curiousoddman.receipt.parsing.utils.ListValueHashMap;
 import com.github.curiousoddman.receipt.parsing.utils.Translations;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
 import com.github.curiousoddman.receipt.parsing.validation.TotalAmountValidator;
@@ -84,13 +85,14 @@ public class RimiText2Receipt {
         return receipt;
     }
 
-    protected Map<String, MyBigDecimal> getPaymentMethods(RimiContext context) {
-        Map<String, MyBigDecimal> result = new LinkedHashMap<>();
+    protected Map<String, List<MyBigDecimal>> getPaymentMethods(RimiContext context) {
+        ListValueHashMap<String, MyBigDecimal> result = new ListValueHashMap<>();
 
         // Deposit coupon
-        Optional<TsvLine> couponLine = context.getLineMatching(DEPOZIT_COUNPON_LINE, 0);
+        List<TsvLine> couponLine = context.getLinesMatching(DEPOZIT_COUNPON_LINE);
         couponLine
-                .flatMap(tsvLine -> tsvLine.getWordByIndex(-1))
+                .stream()
+                .map(tsvLine -> tsvLine.getWordByIndex(-1))
                 .map(word -> getNumberFromReceiptAndReportError(word,
                                                                 NUMBER_PATTERN,
                                                                 context,
@@ -99,7 +101,7 @@ public class RimiText2Receipt {
                                                                 "s"
                 ))
                 .map(NumberOcrResult::getNumber)
-                .ifPresent(amount -> result.put(Constants.DEPOSIT_COUPON, amount));
+                .forEach(amount -> result.add(Constants.DEPOSIT_COUPON, amount));
 
         // Bank card amount
         MyBigDecimal bankCardTotalAmount = context
@@ -127,23 +129,23 @@ public class RimiText2Receipt {
                 .orElse(null);
 
         if (bankCardAmount == null && bankCardTotalAmount == null) {
-            result.put(Constants.BANK_CARD, MyBigDecimal.error("Both places are nulls"));
+            result.add(Constants.BANK_CARD, MyBigDecimal.error("Both places are nulls"));
         } else if (bankCardAmount != null && bankCardTotalAmount != null) {
             if (bankCardAmount.isError() && bankCardTotalAmount.isError()) {
-                result.put(Constants.BANK_CARD, MyBigDecimal.error(bankCardAmount.errorText() + "||||" + bankCardTotalAmount.errorText()));
+                result.add(Constants.BANK_CARD, MyBigDecimal.error(bankCardAmount.errorText() + "||||" + bankCardTotalAmount.errorText()));
             } else if (!bankCardAmount.isError() && !bankCardTotalAmount.isError()) {
                 if (bankCardAmount.value().compareTo(bankCardTotalAmount.value()) == 0) {
-                    result.put(Constants.BANK_CARD, bankCardAmount);
+                    result.add(Constants.BANK_CARD, bankCardAmount);
                 } else {
-                    result.put(Constants.BANK_CARD, MyBigDecimal.error("Amounts do not match: " + bankCardAmount.value() + " and " + bankCardTotalAmount.value()));
+                    result.add(Constants.BANK_CARD, MyBigDecimal.error("Amounts do not match: " + bankCardAmount.value() + " and " + bankCardTotalAmount.value()));
                 }
             } else if (!bankCardAmount.isError()) {
-                result.put(Constants.BANK_CARD, bankCardAmount);
+                result.add(Constants.BANK_CARD, bankCardAmount);
             } else {
-                result.put(Constants.BANK_CARD, bankCardTotalAmount);
+                result.add(Constants.BANK_CARD, bankCardTotalAmount);
             }
         } else {
-            result.put(Constants.BANK_CARD, requireNonNullElse(bankCardAmount, bankCardTotalAmount));
+            result.add(Constants.BANK_CARD, requireNonNullElse(bankCardAmount, bankCardTotalAmount));
         }
 
         return result;

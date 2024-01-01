@@ -21,14 +21,16 @@ public class TotalPaymentAmountValidator implements ReceiptValidator {
 
         BigDecimal paymentMethodSum = BigDecimal.ZERO;
 
-        for (Map.Entry<String, MyBigDecimal> paymentMethod : receipt.getPaymentMethods().entrySet()) {
-            MyBigDecimal amount = paymentMethod.getValue();
-            if (amount.isError()) {
-                return new ValidationResult(getClass(), List.of(
-                        amount.errorText()
-                ));
+        for (Map.Entry<String, List<MyBigDecimal>> paymentMethod : receipt.getPaymentMethods().entrySet()) {
+            List<MyBigDecimal> amounts = paymentMethod.getValue();
+            for (MyBigDecimal amount : amounts) {
+                if (amount.isError()) {
+                    return new ValidationResult(getClass(), List.of(
+                            amount.errorText()
+                    ));
+                }
+                paymentMethodSum = paymentMethodSum.add(amount.value());
             }
-            paymentMethodSum = paymentMethodSum.add(amount.value());
         }
 
         BigDecimal receiptTotalAmount = receiptTotalPayment.value();
