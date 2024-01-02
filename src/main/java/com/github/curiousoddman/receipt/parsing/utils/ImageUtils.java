@@ -53,9 +53,61 @@ public class ImageUtils {
     }
 
     @SneakyThrows
-    private static BufferedImage addSpaceBetweenLines(BufferedImage image, Path targetImage) {
+    public static BufferedImage addSpaceBetweenLines(BufferedImage image, Path targetImage) {
         int height = image.getHeight();
         int width = image.getWidth();
+        List<Line> lines = getLines(image, targetImage, height, width);
+        if (lines.size() == 1) {
+            return image;
+        }
+        int additionalHeight = lines.size() * BLANK_PIXELS_BETWEEN_ROWS;
+        BufferedImage newImage = new BufferedImage(width, height + additionalHeight, image.getType());
+        Graphics2D g2d = newImage.createGraphics();
+        g2d.setBackground(Color.WHITE);
+        g2d.clearRect(0, 0, width, height + additionalHeight);
+        for (int i = 0; i < lines.size(); i++) {
+            Line line = lines.get(i);
+            drawImage(image, line, width, g2d, i, newImage);
+        }
+        g2d.dispose();
+        return newImage;
+    }
+
+    @SneakyThrows
+    public static BufferedImage getImageWithLineWithMostBlackPixels(BufferedImage image) {
+        int height = image.getHeight();
+        int width = image.getWidth();
+        List<Line> lines = getLines(image, null, height, width);
+        if(lines.size() == 1) {
+            return image;
+        }
+        Line lineWithMostBlackPixels = lines.get(0);
+        int countOfBlackPixels = countBlackPixels(image, lineWithMostBlackPixels, width);
+        for (int i = 1; i < lines.size(); i++) {
+            Line currentLine = lines.get(i);
+            int countOfCurrentLineBlackPixels = countBlackPixels(image, currentLine, width);
+            if (countOfBlackPixels < countOfCurrentLineBlackPixels) {
+                countOfBlackPixels = countOfCurrentLineBlackPixels;
+                lineWithMostBlackPixels = currentLine;
+            }
+        }
+
+        return image.getSubimage(0, lineWithMostBlackPixels.yFrom, width, lineWithMostBlackPixels.height());
+    }
+
+    private static int countBlackPixels(BufferedImage image, Line line, int width) {
+        int count = 0;
+        for (int y = line.yFrom; y <= line.yTo; y++) {
+            for (int x = 0; x < width; x++) {
+                if (isBlackPixel(image.getRGB(x, y))) {
+                    ++count;
+                }
+            }
+        }
+        return count;
+    }
+
+    private static List<Line> getLines(BufferedImage image, Path targetImage, int height, int width) throws IOException {
         List<Line> lines = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
 
@@ -75,19 +127,10 @@ public class ImageUtils {
                 sb.append(row).append(": ").append(blackWhitePixelRowStats).append('\n');
             }
         }
-
-        Files.writeString(targetImage.getParent().resolve("pixel_colors.txt"), sb.toString());
-        int additionalHeight = lines.size() * BLANK_PIXELS_BETWEEN_ROWS;
-        BufferedImage newImage = new BufferedImage(width, height + additionalHeight, image.getType());
-        Graphics2D g2d = newImage.createGraphics();
-        g2d.setBackground(Color.WHITE);
-        g2d.clearRect(0, 0, width, height + additionalHeight);
-        for (int i = 0; i < lines.size(); i++) {
-            Line line = lines.get(i);
-            drawImage(image, line, width, g2d, i, newImage);
+        if (targetImage != null) {
+            Files.writeString(targetImage.getParent().resolve("pixel_colors.txt"), sb.toString());
         }
-        g2d.dispose();
-        return newImage;
+        return lines;
     }
 
     private static void drawImage(BufferedImage image, Line line, int width, Graphics2D g2d, int i, BufferedImage newImage) throws IOException {
@@ -160,11 +203,14 @@ public class ImageUtils {
     }
 
     @SneakyThrows
-    private static void saveFileWithRectangle(File inputFile, Path rectangledFileName, int x, int y, int width, int height) {
+    public static void saveFileWithRectangle(File inputFile, Path rectangledFileName, int x, int y, int width, int height) {
         Files.copy(inputFile.toPath(), rectangledFileName);
-        BufferedImage img = ImageIO.read(rectangledFileName.toFile());
+        BufferedImage inputImage = ImageIO.read(rectangledFileName.toFile());
+        BufferedImage img = new BufferedImage(inputImage.getWidth(), inputImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = img.createGraphics();
         g2d.setColor(Color.RED);
+        g2d.drawImage(inputImage, 0, 0, null);
+        g2d.setStroke(new BasicStroke(3));
         g2d.drawRect(x, y, width, height);
         g2d.dispose();
         ImageIO.write(img, "tiff", rectangledFileName.toFile());

@@ -14,20 +14,21 @@ import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
 import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
-import com.github.curiousoddman.receipt.parsing.utils.Constants;
-import com.github.curiousoddman.receipt.parsing.utils.ConversionUtils;
-import com.github.curiousoddman.receipt.parsing.utils.ListValueHashMap;
-import com.github.curiousoddman.receipt.parsing.utils.Translations;
+import com.github.curiousoddman.receipt.parsing.utils.*;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
 import com.github.curiousoddman.receipt.parsing.validation.TotalAmountValidator;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.TesseractException;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -446,27 +447,38 @@ public class RimiText2Receipt {
 
     private ReceiptItem tryOcrNumbersAgain(RimiContext context, ReceiptItemResult receiptItemResult) {
         List<OcrResultWithSetter> allNumbers = List.of(
-                new OcrResultWithSetter(receiptItemResult.getDiscountOcrResult(), ReceiptItem::setDiscount),
-                new OcrResultWithSetter(receiptItemResult.getFinalCostOcrResult(), ReceiptItem::setFinalCost),
-                new OcrResultWithSetter(receiptItemResult.getPricePerUnitOcrResult(), ReceiptItem::setPricePerUnit),
-                new OcrResultWithSetter(receiptItemResult.getCountOcrResult(), ReceiptItem::setCount)
+                new OcrResultWithSetter("Discount", receiptItemResult.getDiscountOcrResult(), ReceiptItem::setDiscount),
+                new OcrResultWithSetter("Final Cost", receiptItemResult.getFinalCostOcrResult(), ReceiptItem::setFinalCost),
+                new OcrResultWithSetter("Price per unit", receiptItemResult.getPricePerUnitOcrResult(), ReceiptItem::setPricePerUnit),
+                new OcrResultWithSetter("Count", receiptItemResult.getCountOcrResult(), ReceiptItem::setCount)
         );
         for (OcrResultWithSetter rnWithSetter : allNumbers) {
             NumberOcrResult ocrResult = rnWithSetter.ocrResult();
             if (ocrResult.getLocation() == null) {
+                log.error("Location is not present");
                 continue;
             }
             BiConsumer<ReceiptItem, MyBigDecimal> setter = rnWithSetter.setter();
-
+            Path path = refineLine(ocrResult.getLocation(), context);
             String newValue = null;
             try {
-                OcrConfig ocrConfig = OcrConfig
-                        .builder(context.getOriginFile().preprocessedTiff())
-                        .ocrDigitsOnly(true)
-                        .ocrArea(ocrResult.getLocation())
-                        .build();
+                OcrConfig ocrConfig;
+                if (path == null) {
+                    ocrConfig = OcrConfig
+                            .builder(context.getOriginFile().preprocessedTiff())
+                            .ocrDigitsOnly(true)
+                            .ocrArea(ocrResult.getLocation())
+                            .build();
+                } else {
+                    ocrConfig = OcrConfig
+                            .builder(path)
+                            .ocrDigitsOnly(true)
+                            .build();
+                }
+
                 newValue = context.getTesseract().doOCR(ocrConfig);
             } catch (TesseractException e) {
+                log.error("Failed to re-ocr item numbers", e);
                 receiptItemResult.getReceiptItem().setErrorMessage(e.getMessage());
                 return receiptItemResult.getReceiptItem();
             }
@@ -481,6 +493,20 @@ public class RimiText2Receipt {
         return receiptItemResult.getReceiptItem();
     }
 
+    @SneakyThrows
+    private Path refineLine(Rectangle wordRect, RimiContext context) {
+        Path path = context.getOriginFile().preprocessedTiff();
+        BufferedImage inputImage = ImageIO.read(path.toFile());
+        BufferedImage subimage = inputImage.getSubimage(wordRect.x, wordRect.y, wordRect.width, wordRect.height);
+        BufferedImage bufferedImage = ImageUtils.getImageWithLineWithMostBlackPixels(subimage);
+        if (bufferedImage == subimage) {
+            return null;
+        }
+        Path rectangledFileName = Path.of(path + String.format("_%d_%d_%d_%d.tiff", wordRect.x, wordRect.y, wordRect.width, wordRect.height));
+        ImageIO.write(bufferedImage, "tiff", rectangledFileName.toFile());
+        return rectangledFileName;
+    }
+
     @Data
     private static class ItemLines {
         List<TsvLine> descriptionLines = new ArrayList<>();
@@ -488,7 +514,7 @@ public class RimiText2Receipt {
         TsvLine       discountLine;
     }
 
-    private record OcrResultWithSetter(NumberOcrResult ocrResult, BiConsumer<ReceiptItem, MyBigDecimal> setter) {
+    private record OcrResultWithSetter(String description, NumberOcrResult ocrResult, BiConsumer<ReceiptItem, MyBigDecimal> setter) {
 
     }
 
