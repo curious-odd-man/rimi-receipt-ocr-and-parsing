@@ -45,8 +45,10 @@ import static java.util.Objects.requireNonNullElse;
 @RequiredArgsConstructor
 public class RimiText2Receipt {
 
-    private static final Consumer<TsvWord> NOOP_CONSUMER = v -> {
+    private static final Consumer<TsvWord> NOOP_CONSUMER         = v -> {
     };
+    public static final  int               RECEIPT_WIDTH_PX      = 1441;
+    public static final  int               HALF_RECEIPT_WIDTH_PX = RECEIPT_WIDTH_PX / 2;
 
     private final Tsv2Struct           tsv2Struct;
     private final ItemNumbersValidator itemNumbersValidator;
@@ -212,16 +214,32 @@ public class RimiText2Receipt {
         return tsvLine.getText();
     }
 
+    @SneakyThrows
     protected MyBigDecimal getTotalSavings(RimiContext context) {
-        return getWordFromMatchingLine(context, SAVINGS_AMOUNT_SEARCH, 3)
-                .map(tsvWord -> getNumberFromReceiptAndReportError(tsvWord,
-                                                                   MONEY_AMOUNT,
-                                                                   context,
-                                                                   context::collectTotalSavings,
-                                                                   2,
-                                                                   "L"))
-                .map(NumberOcrResult::getNumber)
-                .orElse(MyBigDecimal.zero());
+        Optional<TsvWord> wordFromMatchingLine = getWordFromMatchingLine(context, SAVINGS_AMOUNT_SEARCH, 3);
+        if (wordFromMatchingLine.isEmpty()) {
+            return MyBigDecimal.zero();
+        }
+
+        TsvWord tsvWord = wordFromMatchingLine.get();
+        TsvLine parentLine = tsvWord.getParentLine();
+        OcrConfig routineRetryOcrConfig = OcrConfig
+                .builder(context.getOriginFile().preprocessedTiff())
+                .ocrDigitsOnly(true)
+                .ocrArea(new Rectangle(HALF_RECEIPT_WIDTH_PX, parentLine.getY(), HALF_RECEIPT_WIDTH_PX, parentLine.getHeight()))
+                .build();
+        String reOcredText = context.getTesseract().doOCR(routineRetryOcrConfig);
+        if (isFormatValid(MONEY_AMOUNT, reOcredText)) {
+            return toMyBigDecimal(reOcredText);
+        }
+
+        return getNumberFromReceiptAndReportError(wordFromMatchingLine,
+                                                  MONEY_AMOUNT,
+                                                  context,
+                                                  context::collectTotalSavings,
+                                                  2,
+                                                  "L")
+                .getNumber();
     }
 
     @SneakyThrows
@@ -235,7 +253,7 @@ public class RimiText2Receipt {
         OcrConfig routineRetryOcrConfig = OcrConfig
                 .builder(context.getOriginFile().preprocessedTiff())
                 .ocrDigitsOnly(true)
-                .ocrArea(new Rectangle(1441 / 2, matchingLine.getY(), 1441 / 2, matchingLine.getHeight()))
+                .ocrArea(new Rectangle(HALF_RECEIPT_WIDTH_PX, matchingLine.getY(), HALF_RECEIPT_WIDTH_PX, matchingLine.getHeight()))
                 .build();
         String reOcredText = context.getTesseract().doOCR(routineRetryOcrConfig);
         if (isFormatValid(MONEY_AMOUNT, reOcredText)) {
