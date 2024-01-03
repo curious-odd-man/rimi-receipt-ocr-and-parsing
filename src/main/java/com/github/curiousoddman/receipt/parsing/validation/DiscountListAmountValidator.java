@@ -41,7 +41,7 @@ public class DiscountListAmountValidator implements ReceiptValidator {
         }
 
         return new ValidationResult(getClass(), List.of(
-                String.format("Total savings %s not equal to sum of item discounts %s", totalSavingsValue, listTotalDisctount)
+                String.format("Total savings %s not equal to sum of discounts %s", totalSavingsValue, listTotalDisctount)
         ));
     }
 }

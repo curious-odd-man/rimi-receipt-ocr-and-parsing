@@ -36,8 +36,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.parseDateTime;
-import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.toMyBigDecimal;
+import static com.github.curiousoddman.receipt.parsing.utils.ConversionUtils.*;
 import static com.github.curiousoddman.receipt.parsing.utils.Patterns.*;
 import static java.util.Objects.requireNonNullElse;
 
@@ -225,13 +224,23 @@ public class RimiText2Receipt {
                 .orElse(MyBigDecimal.zero());
     }
 
+    @SneakyThrows
     protected MyBigDecimal getTotalAmount(RimiContext context) {
         Optional<TsvLine> optionalMatchingLine = context.getLineMatching(PAYMENT_SUM, 0);
         if (optionalMatchingLine.isEmpty()) {
-            return MyBigDecimal.error("Failed to extract total amount");
+            return MyBigDecimal.error("Could not find '" + PAYMENT_SUM + "' pattern on receipt!");
         }
 
         TsvLine matchingLine = optionalMatchingLine.get();
+        OcrConfig routineRetryOcrConfig = OcrConfig
+                .builder(context.getOriginFile().preprocessedTiff())
+                .ocrDigitsOnly(true)
+                .ocrArea(new Rectangle(1441 / 2, matchingLine.getY(), 1441 / 2, matchingLine.getHeight()))
+                .build();
+        String reOcredText = context.getTesseract().doOCR(routineRetryOcrConfig);
+        if (isFormatValid(MONEY_AMOUNT, reOcredText)) {
+            return toMyBigDecimal(reOcredText);
+        }
         TsvWord lastWord = matchingLine.getWordByIndex(-1).orElseThrow();
         NumberOcrResult lastWordAsNumber = getNumberFromReceipt(lastWord,
                                                                 MONEY_AMOUNT,
@@ -494,7 +503,7 @@ public class RimiText2Receipt {
     }
 
     @SneakyThrows
-    private Path refineLine(Rectangle wordRect, RimiContext context) {
+    private static Path refineLine(Rectangle wordRect, RimiContext context) {
         Path path = context.getOriginFile().preprocessedTiff();
         BufferedImage inputImage = ImageIO.read(path.toFile());
         BufferedImage subimage = inputImage.getSubimage(wordRect.x, wordRect.y, wordRect.width, wordRect.height);
