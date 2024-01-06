@@ -393,6 +393,7 @@ public class RimiText2Receipt {
                         List<ReceiptItem> allMatchingItems = items
                                 .stream()
                                 .filter(existingItem -> TextUtils.calculateLikeness(existingItem.getDescription(), removedItemName) >= 0.9)
+                                .filter(existingItem -> !existingItem.isRemoved())
                                 .toList();
                         if (allMatchingItems.size() == 1) {
                             allMatchingItems.forEach(i -> i.setRemoved(true));
