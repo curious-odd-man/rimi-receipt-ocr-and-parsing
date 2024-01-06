@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.curiousoddman.receipt.alt.main.img.FontLetter;
 import com.github.curiousoddman.receipt.alt.main.img.ImageCache;
 import com.github.curiousoddman.receipt.alt.main.img.LetterInFile;
-import com.github.curiousoddman.receipt.parsing.stats.AllNumberCollector;
+import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import com.github.curiousoddman.receipt.parsing.stats.MyRect;
 import com.github.curiousoddman.receipt.parsing.stats.NumberOnReceipt;
 import com.github.curiousoddman.receipt.parsing.utils.JsonUtils;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class NumberImageStatisticsProcessor {
-    private static final Path       ROOT_DIR                                    = AllNumberCollector.ALL_NUMBER_WORDS_JSON.getParent();
+    private static final Path       ROOT_DIR                                    = PathsConfig.ALL_NUMBER_WORDS_JSON.getParent();
     private static final Path       EXTRACTED_LETTER_FILE                       = ROOT_DIR.resolve("extracted-letters.json");
     private static final int        N_THREADS                                   = 7;
     private static final ImageCache IMAGE_CACHE                                 = new ImageCache();
@@ -135,7 +135,7 @@ public class NumberImageStatisticsProcessor {
 
     @SneakyThrows
     public static NumberOnReceipt[] loadInputFile() {
-        String inputJsonContents = Files.readString(AllNumberCollector.ALL_NUMBER_WORDS_JSON);
+        String inputJsonContents = Files.readString(PathsConfig.ALL_NUMBER_WORDS_JSON);
         return JsonUtils
                 .OBJECT_MAPPER
                 .readValue(inputJsonContents, NumberOnReceipt[].class);

@@ -1,9 +1,10 @@
 package com.github.curiousoddman.receipt.parsing.cache;
 
+import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
-import com.github.curiousoddman.receipt.parsing.utils.ImageUtils;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
+import com.github.curiousoddman.receipt.parsing.utils.ImageUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -18,11 +19,12 @@ import static com.github.curiousoddman.receipt.parsing.utils.ImageUtils.getImage
 @Slf4j
 @Component
 public class FileCache {
-    private static final Path CACHE_ROOT = Path.of("D:\\Programming\\git\\caches\\cache");
+
+    public static final Path FILE_CACHE_DIR = PathsConfig.CACHES.resolve("cache");
 
     @SneakyThrows
     public FileCache() {
-        Files.createDirectories(CACHE_ROOT);
+        Files.createDirectories(FILE_CACHE_DIR);
     }
 
     @SneakyThrows
@@ -64,7 +66,7 @@ public class FileCache {
         String fileName = pdfFile.toFile().getName();
         int i = fileName.indexOf('.');
         String dirName = fileName.substring(0, i);
-        Path newRoot = CACHE_ROOT.resolve(dirName);
+        Path newRoot = FILE_CACHE_DIR.resolve(dirName);
         if (!Files.exists(newRoot)) {
             Files.createDirectories(newRoot);
         }

@@ -1,11 +1,11 @@
 package com.github.curiousoddman.receipt.parsing;
 
 
+import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -16,9 +16,8 @@ public class IgnoreList {
 
     @SneakyThrows
     public IgnoreList() {
-        Path ignoreListPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\data\\ignore.txt");
         ignoredFiles = Files
-                .readAllLines(ignoreListPath)
+                .readAllLines(PathsConfig.IGNORE_PDF_CONFIG_PATH)
                 .stream()
                 .map(line -> line.split(" +")[0])
                 .collect(Collectors.toUnmodifiableSet());

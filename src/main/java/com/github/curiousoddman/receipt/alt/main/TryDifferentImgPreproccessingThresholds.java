@@ -17,10 +17,10 @@ public class TryDifferentImgPreproccessingThresholds {
     public static void main(String[] args) {
         OpenCV.loadLocally();
 
-        Path sourceTiff = Path.of("D:\\Programming\\git\\caches\\cache\\3-311743\\3-311743.pdf.tiff");
+        Path sourceTiff = Path.of("W:\\Programming\\git\\caches\\cache\\3-311743\\3-311743.pdf.tiff");
 
         for (int i = 180; i < 200; i+=2) {
-            Path targetImage = Path.of("D:\\Programming\\git\\caches\\cache\\test\\").resolve(sourceTiff.getFileName() + "." + i + ".tiff");
+            Path targetImage = Path.of("W:\\Programming\\git\\caches\\cache\\test\\").resolve(sourceTiff.getFileName() + "." + i + ".tiff");
             Mat sourceMat = loadImage(sourceTiff.toAbsolutePath().toString(), IMREAD_GRAYSCALE);
             //saveImage(sourceMat, imagePath + ".grayscale.tiff");
             Mat dstMat = new Mat(sourceMat.rows(), sourceMat.cols(), sourceMat.type());

@@ -28,7 +28,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 @Slf4j
 public class TestCharImageRecognition {
-    private static final Path                                TEST_DEBUG_INFO_LOCATION = Path.of("D:\\Programming\\git\\caches\\test-results\\TestCharImageRecognition");
+    private static final Path                                TEST_DEBUG_INFO_LOCATION = Path.of("W:\\Programming\\git\\caches\\test-results\\TestCharImageRecognition");
     private static final Map<FontLetter, List<LetterInFile>> ALL_S_FILES              = getAllTestFiles("S");
     private static final Map<FontLetter, List<LetterInFile>> ALL_L_FILES              = getAllTestFiles("L");
     private static final Map<FontLetter, List<LetterInFile>> ALL_XL_FILES             = getAllTestFiles("XL");
@@ -120,9 +120,9 @@ public class TestCharImageRecognition {
 
     @Test
     void demoTest() {
-        Path largeZeroPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_0.png");
-        Path smallZeroPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_small_0.png");
-        Path nineZeroPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_9.png");
+        Path largeZeroPath = Path.of("W:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_0.png");
+        Path smallZeroPath = Path.of("W:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_small_0.png");
+        Path nineZeroPath = Path.of("W:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_9.png");
         ImgMatrix image = imgMatrixCache.loadImage(largeZeroPath);
         CharImage largeZero = new CharImage("TEST", "TEST", image);
         assertTrue(isSimilar(image, largeZero));
@@ -130,9 +130,9 @@ public class TestCharImageRecognition {
 
     @Test
     void demoTest1() {
-        Path largeZeroPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_0.png");
-        Path smallZeroPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_small_0.png");
-        Path nineZeroPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_9.png");
+        Path largeZeroPath = Path.of("W:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_0.png");
+        Path smallZeroPath = Path.of("W:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_small_0.png");
+        Path nineZeroPath = Path.of("W:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_9.png");
         ImgMatrix zeroImage = imgMatrixCache.loadImage(largeZeroPath);
         ImgMatrix nineImage = imgMatrixCache.loadImage(nineZeroPath);
         CharImage largeZero = new CharImage("TEST", "TEST", nineImage);
@@ -141,9 +141,9 @@ public class TestCharImageRecognition {
 
     @Test
     void demoTest2() {
-        Path largeZeroPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_0.png");
-        Path smallZeroPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_small_0.png");
-        Path nineZeroPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_9.png");
+        Path largeZeroPath = Path.of("W:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_0.png");
+        Path smallZeroPath = Path.of("W:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_small_0.png");
+        Path nineZeroPath = Path.of("W:\\Programming\\git\\private-tools\\receipts-parsing\\src\\test\\resources\\Demo_9.png");
         ImgMatrix zeroImage = imgMatrixCache.loadImage(largeZeroPath);
         ImgMatrix smallZeroImage = imgMatrixCache.loadImage(smallZeroPath);
         CharImage largeZero = new CharImage("TEST", "TEST", smallZeroImage);

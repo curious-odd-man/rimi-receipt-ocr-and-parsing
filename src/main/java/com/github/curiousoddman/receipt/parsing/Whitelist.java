@@ -1,12 +1,12 @@
 package com.github.curiousoddman.receipt.parsing;
 
 
+import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,9 +19,8 @@ public class Whitelist {
 
     @SneakyThrows
     public Whitelist() {
-        Path ignoreListPath = Path.of("D:\\Programming\\git\\private-tools\\receipts-parsing\\data\\whitelist.txt");
         whiltelist = Files
-                .readAllLines(ignoreListPath)
+                .readAllLines(PathsConfig.WHITELIST_CONFIG_PATH)
                 .stream()
                 .filter(line -> !line.startsWith("#"))
                 .filter(line -> !line.isBlank())

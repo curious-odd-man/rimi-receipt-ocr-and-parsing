@@ -1,5 +1,6 @@
 package com.github.curiousoddman.receipt.parsing.tess;
 
+import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.sun.jna.Pointer;
 import lombok.SneakyThrows;
@@ -24,8 +25,9 @@ import java.util.Properties;
 
 @Slf4j
 public class MyTesseract extends Tesseract {
+
     public MyTesseract() {
-        setDatapath("D:\\Programming\\git\\private-tools\\receipts-parsing\\tes");
+        setDatapath(PathsConfig.TESSERACT_MODEL_PATH);
         setLanguage("lav");
     }
 

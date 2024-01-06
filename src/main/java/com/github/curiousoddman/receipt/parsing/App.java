@@ -1,6 +1,7 @@
 package com.github.curiousoddman.receipt.parsing;
 
 import com.github.curiousoddman.receipt.parsing.cache.FileCache;
+import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi.RimiText2Receipt;
@@ -38,7 +39,7 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 @Component
 @RequiredArgsConstructor
 public class App implements ApplicationRunner {
-    private static final int                      MAX_PARALLEL_THREADS   = 3;
+    private static final int MAX_PARALLEL_THREADS = 3;
     private static final ThreadLocal<MyTesseract> TESSERACT_THREAD_LOCAL = ThreadLocal
             .withInitial(() -> {
                 log.info("New Tesseract created");
@@ -58,7 +59,7 @@ public class App implements ApplicationRunner {
     public void run(ApplicationArguments args) throws Exception {
         ValidationStatsCollector validationStatsCollector = new ValidationStatsCollector();
         ParsingStatsCollector parsingStatsCollector = new ParsingStatsCollector();
-        try (Stream<Path> files = Files.list(Paths.get("D:\\Programming\\git\\private-tools\\gmail-client\\output"))) {
+        try (Stream<Path> files = Files.list(PathsConfig.PDF_INPUT_DIR)) {
             List<Path> allPdfFiles = files.filter(App::isPdfFile).toList();
             if (MAX_PARALLEL_THREADS == 0) {
                 for (Path pdfFile : allPdfFiles) {
@@ -79,7 +80,7 @@ public class App implements ApplicationRunner {
         receiptStatsCollectors.forEach(ReceiptStatsCollector::printSummary);
         parsingStatsCollector.printStats();
         allNumberCollector.saveResult();
-        validationExecutor.saveResult(Path.of("D:\\Programming\\git\\caches\\validation-result.json"));
+        validationExecutor.saveResult(PathsConfig.VALIDATION_RESULT_JSON);
     }
 
     private void safeTransformFile(Path pdfFile, ParsingStatsCollector parsingStatsCollector, ValidationStatsCollector validationStatsCollector) {
