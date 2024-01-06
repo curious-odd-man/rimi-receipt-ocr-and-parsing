@@ -390,7 +390,10 @@ public class RimiText2Receipt {
                     if (itemResult.getReceiptItem().getDescription().contains("Korekci")) {
                         itemNameBuilder.remove(0);
                         String removedItemName = String.join(" ", itemNameBuilder);
-                        List<ReceiptItem> allMatchingItems = items.stream().filter(existingItem -> existingItem.getDescription().equals(removedItemName)).toList();
+                        List<ReceiptItem> allMatchingItems = items
+                                .stream()
+                                .filter(existingItem -> TextUtils.calculateLikeness(existingItem.getDescription(), removedItemName) >= 0.9)
+                                .toList();
                         if (allMatchingItems.size() == 1) {
                             allMatchingItems.forEach(i -> i.setRemoved(true));
                             shouldIncludeItem = false;
