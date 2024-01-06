@@ -1,21 +1,16 @@
 package com.github.curiousoddman.receipt.parsing.stats;
 
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
-import com.github.curiousoddman.receipt.parsing.utils.JsonUtils;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 
 import java.awt.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class AllNumberCollector {
-    public static final Path ALL_NUMBER_WORDS_JSON = Path.of("D:\\Programming\\git\\caches\\all-number-words.json");
-
     private final List<NumberOnReceipt> numberOnReceipts = new ArrayList<>();
 
     public synchronized void add(Path filePath, String type, TsvWord word) {
