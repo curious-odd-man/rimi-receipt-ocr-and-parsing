@@ -385,6 +385,7 @@ public class RimiText2Receipt {
                     discountLine = line;
                     itemLines.setDiscountLine(line);
                 } else {
+                    boolean shouldIncludeItem = true;
                     ReceiptItemResult itemResult = createItem(context, discountLine, priceLine, itemNameBuilder);
                     if (itemResult.getReceiptItem().getDescription().contains("Korekci")) {
                         itemNameBuilder.remove(0);
@@ -392,16 +393,19 @@ public class RimiText2Receipt {
                         List<ReceiptItem> allMatchingItems = items.stream().filter(existingItem -> existingItem.getDescription().equals(removedItemName)).toList();
                         if (allMatchingItems.size() == 1) {
                             allMatchingItems.forEach(i -> i.setRemoved(true));
+                            shouldIncludeItem = false;
                         } else {
                             log.error("Correction error {}", allMatchingItems);
                             allMatchingItems.forEach(i -> i.setCorrectionItemError("This was detected as a correction for " + itemResult.getReceiptItem().getDescription()));
                         }
                     }
-                    if (itemNumbersValidator.isItemValid(itemResult.getReceiptItem())) {
-                        items.add(itemResult.getReceiptItem());
-                    } else {
-                        ReceiptItem item = tryOcrNumbersAgain(context, itemResult);
-                        items.add(item);
+                    if (shouldIncludeItem) {
+                        if (itemNumbersValidator.isItemValid(itemResult.getReceiptItem())) {
+                            items.add(itemResult.getReceiptItem());
+                        } else {
+                            ReceiptItem item = tryOcrNumbersAgain(context, itemResult);
+                            items.add(item);
+                        }
                     }
                     priceLine = null;
                     discountLine = null;

@@ -28,7 +28,9 @@ public class TotalDiscountAmountValidator implements ReceiptValidator {
                         String.format(discount.errorText())
                 ));
             }
-            itemsTotalDiscounts = itemsTotalDiscounts.add(discount.value());
+            if (!item.isRemoved()) {
+                itemsTotalDiscounts = itemsTotalDiscounts.add(discount.value());
+            }
         }
 
         MyBigDecimal usedShopBrandMoney = receipt

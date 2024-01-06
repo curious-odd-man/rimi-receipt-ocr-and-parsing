@@ -39,7 +39,9 @@ public class TotalAmountValidator implements ReceiptValidator {
                         finalCost.errorText()
                 ));
             }
-            itemPriceSum = itemPriceSum.add(finalCost.value());
+            if (!item.isRemoved()) {
+                itemPriceSum = itemPriceSum.add(finalCost.value());
+            }
         }
 
         if (totalPayment.compareTo(itemPriceSum) == 0) {

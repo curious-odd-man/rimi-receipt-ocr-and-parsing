@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class ReceiptItem {
     private String       description;
     private MyBigDecimal count;
@@ -17,6 +18,7 @@ public class ReceiptItem {
     private String       units;
     private MyBigDecimal discount;
     private MyBigDecimal finalCost;
+
     private boolean      isRemoved;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
