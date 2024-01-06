@@ -386,6 +386,17 @@ public class RimiText2Receipt {
                     itemLines.setDiscountLine(line);
                 } else {
                     ReceiptItemResult itemResult = createItem(context, discountLine, priceLine, itemNameBuilder);
+                    if (itemResult.getReceiptItem().getDescription().contains("Korekci")) {
+                        itemNameBuilder.remove(0);
+                        String removedItemName = String.join(" ", itemNameBuilder);
+                        List<ReceiptItem> allMatchingItems = items.stream().filter(existingItem -> existingItem.getDescription().equals(removedItemName)).toList();
+                        if (allMatchingItems.size() == 1) {
+                            allMatchingItems.forEach(i -> i.setRemoved(true));
+                        } else {
+                            log.error("Correction error {}", allMatchingItems);
+                            allMatchingItems.forEach(i -> i.setCorrectionItemError("This was detected as a correction for " + itemResult.getReceiptItem().getDescription()));
+                        }
+                    }
                     if (itemNumbersValidator.isItemValid(itemResult.getReceiptItem())) {
                         items.add(itemResult.getReceiptItem());
                     } else {
@@ -396,6 +407,7 @@ public class RimiText2Receipt {
                     discountLine = null;
                     itemLines = new ItemLines();
                     itemLines.getDescriptionLines().add(line);
+                    itemNameBuilder.clear();
                     itemNameBuilder.add(line.getText());
                 }
             }
@@ -454,7 +466,6 @@ public class RimiText2Receipt {
                 .finalCost(finalCostOcrResult.getNumber())
                 .build();
 
-        itemNameBuilder.clear();
         return new ReceiptItemResult(
                 item,
                 finalCostOcrResult,

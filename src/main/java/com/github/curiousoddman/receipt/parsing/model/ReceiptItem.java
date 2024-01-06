@@ -6,10 +6,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Data
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 public class ReceiptItem {
     private String       description;
     private MyBigDecimal count;
@@ -17,7 +17,10 @@ public class ReceiptItem {
     private String       units;
     private MyBigDecimal discount;
     private MyBigDecimal finalCost;
+    private boolean      isRemoved;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String errorMessage;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String correctionItemError;
 }
