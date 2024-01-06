@@ -1,7 +1,6 @@
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 
-import java.awt.*;
 import java.nio.file.Path;
 
 public class TestMain {

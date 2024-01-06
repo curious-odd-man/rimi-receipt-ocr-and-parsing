@@ -79,7 +79,7 @@ public class MyTesseract extends Tesseract {
     @SneakyThrows
     public Properties getProperties() {
         try {
-            Field props = this.getClass().getSuperclass().getDeclaredField("prop");
+            Field props = getClass().getSuperclass().getDeclaredField("prop");
             props.setAccessible(true);
             return (Properties) props.get(this);
         } catch (Exception e) {
@@ -109,7 +109,7 @@ public class MyTesseract extends Tesseract {
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
             ImageReader reader = readers.next();
             StringBuilder result = new StringBuilder();
-            try (ImageInputStream iis = ImageIO.createImageInputStream(tiffFile);) {
+            try (ImageInputStream iis = ImageIO.createImageInputStream(tiffFile)) {
                 reader.setInput(iis);
                 int imageTotal = reader.getNumImages(true);
 

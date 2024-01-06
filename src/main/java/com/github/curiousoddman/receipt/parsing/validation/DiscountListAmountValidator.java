@@ -2,7 +2,6 @@ package com.github.curiousoddman.receipt.parsing.validation;
 
 import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
-import com.github.curiousoddman.receipt.parsing.utils.Constants;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
