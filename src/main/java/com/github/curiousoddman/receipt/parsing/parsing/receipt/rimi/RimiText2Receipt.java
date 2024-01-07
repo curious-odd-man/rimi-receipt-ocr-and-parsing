@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
@@ -464,13 +465,17 @@ public class RimiText2Receipt {
         }
 
         context.collectItemUnitsLocation(unitsTsvWord);
+        MyBigDecimal discountNumber = discountOcrResult.getNumber();
+        if (discountNumber.value().compareTo(BigDecimal.ZERO) > 0) {
+            discountNumber = new MyBigDecimal(discountNumber.value().multiply(BigDecimal.valueOf(-1)), discountNumber.text(), null);
+        }
         ReceiptItem item = ReceiptItem
                 .builder()
                 .description(Strings.join(itemNameBuilder, ' ').trim())
                 .count(countOcrResult.getNumber())
                 .units(unitsWord)
                 .pricePerUnit(pricePerUnitOcrResult.getNumber())
-                .discount(discountOcrResult.getNumber())
+                .discount(discountNumber)
                 .finalCost(finalCostOcrResult.getNumber())
                 .build();
 
