@@ -23,8 +23,9 @@ public class Patterns {
     1 iep X 39,99 EUR 39,99 A
     ll gab X 1,49 EUR 1,49 A
     1 gab X 2,87 EŪR 2,87 A
+    1 gab xXx 2,49 EUR 2,49 A
      */
-    public static final Pattern COUNT_PRICE_AND_SUM_LINE = Pattern.compile(".?(.*) +.* +X +(\\d+([.,] ?\\d+)?)\\W+.{2,3}(/ ?kg)? +(.*)");
+    public static final Pattern COUNT_PRICE_AND_SUM_LINE = Pattern.compile(".?(.*) +.* +(X|xXx) +(\\d+([.,] ?\\d+)?)\\W+.{2,3}(/ ?kg)? +(.*)");
 
     /*
     Atī. -0,33 Gala cena 2,89
