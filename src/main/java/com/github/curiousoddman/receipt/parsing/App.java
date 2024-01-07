@@ -38,7 +38,7 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 @Component
 @RequiredArgsConstructor
 public class App implements ApplicationRunner {
-    private static final int MAX_PARALLEL_THREADS = 3;
+    private static final int MAX_PARALLEL_THREADS = 5;
     private static final ThreadLocal<MyTesseract> TESSERACT_THREAD_LOCAL = ThreadLocal
             .withInitial(() -> {
                 log.info("New Tesseract created");

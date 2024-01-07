@@ -262,46 +262,7 @@ public class RimiText2Receipt {
         if (isFormatValid(MONEY_AMOUNT, reOcredText)) {
             return toMyBigDecimal(reOcredText);
         }
-        TsvWord lastWord = matchingLine.getWordByIndex(-1).orElseThrow();
-        NumberOcrResult lastWordAsNumber = getNumberFromReceipt(lastWord,
-                                                                MONEY_AMOUNT,
-                                                                context,
-                                                                NOOP_CONSUMER,
-                                                                -1,
-                                                                "XL");
-        if (!lastWordAsNumber.isError()) {
-            return lastWordAsNumber.getNumber();
-        }
-
-        Optional<TsvWord> optionalPreLastWord = matchingLine.getWordByIndex(-2);
-        if (optionalPreLastWord.isEmpty()) {
-            lastWordAsNumber.reportError();
-            return MyBigDecimal.error("Failed to extract total amount: using 2 last words - there is only one word in line");
-        }
-
-        TsvWord preLastWord = optionalPreLastWord.get();
-        if (preLastWord.getText().endsWith("EUR")) {
-            lastWordAsNumber.reportError();
-            return MyBigDecimal.error("Failed to extract total amount: using 2 last words - EUR is not a number");
-        }
-
-        Rectangle preLastRectangle = preLastWord.getWordRect();
-        Rectangle lastRectangle = lastWord.getWordRect();
-        Rectangle combinedRectangle = preLastRectangle.union(lastRectangle);
-
-        OcrConfig ocrConfig = OcrConfig
-                .builder(context.getOriginFile().preprocessedTiff())
-                .ocrArea(combinedRectangle)
-                .ocrDigitsOnly(true)
-                .build();
-
-        try {
-            String text = context.getTesseract().doOCR(ocrConfig);
-            return toMyBigDecimal(text);
-        } catch (TesseractException e) {
-            lastWordAsNumber.reportError();
-            return MyBigDecimal.error("Failed to extract total amount: using 2 last words - tesseract error", e);
-        }
+        return MyBigDecimal.error("Could not detect total amount");
     }
 
     protected MyBigDecimal getTotalPayment(RimiContext context) {
