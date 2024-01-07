@@ -46,10 +46,12 @@ import static java.util.Objects.requireNonNullElse;
 @RequiredArgsConstructor
 public class RimiText2Receipt {
 
-    private static final Consumer<TsvWord> NOOP_CONSUMER         = v -> {
+    private static final Consumer<TsvWord> NOOP_CONSUMER = v -> {
     };
     public static final  int               RECEIPT_WIDTH_PX      = 1441;
     public static final  int               HALF_RECEIPT_WIDTH_PX = RECEIPT_WIDTH_PX / 2;
+    public static final int X_IMG_PX_MAX = 1300;
+    public static final int X_IMG_PX_MIN = 1260;
 
     private final Tsv2Struct           tsv2Struct;
     private final ItemNumbersValidator itemNumbersValidator;
@@ -173,7 +175,7 @@ public class RimiText2Receipt {
             List<TsvWord> words = new ArrayList<>(tsvLine.getWords());
             TsvWord amountWord = words.get(words.size() - 1);
             int indexOfDiscountAmountEnd = amountWord.getX() + amountWord.getWidth();
-            if (indexOfDiscountAmountEnd < 1300 && indexOfDiscountAmountEnd > 1260) {
+            if (indexOfDiscountAmountEnd < X_IMG_PX_MAX && indexOfDiscountAmountEnd > X_IMG_PX_MIN) {
                 NumberOcrResult amountNumber = getNumberFromReceiptAndReportError(amountWord,
                                                                                   MONEY_AMOUNT,
                                                                                   context,
