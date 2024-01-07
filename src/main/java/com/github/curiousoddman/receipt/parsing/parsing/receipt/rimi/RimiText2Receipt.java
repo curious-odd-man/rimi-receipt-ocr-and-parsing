@@ -174,7 +174,7 @@ public class RimiText2Receipt {
             int indexOfDiscountAmountEnd = amountWord.getX() + amountWord.getWidth();
             if (indexOfDiscountAmountEnd < 1300 && indexOfDiscountAmountEnd > 1260) {
                 NumberOcrResult amountNumber = getNumberFromReceiptAndReportError(amountWord,
-                                                                                  NUMBER_PATTERN,
+                                                                                  MONEY_AMOUNT,
                                                                                   context,
                                                                                   NOOP_CONSUMER,
                                                                                   -1,
