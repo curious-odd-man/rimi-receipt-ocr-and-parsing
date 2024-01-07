@@ -95,7 +95,7 @@ public class RimiText2Receipt {
                 .stream()
                 .map(tsvLine -> tsvLine.getWordByIndex(-1))
                 .map(word -> getNumberFromReceiptAndReportError(word,
-                                                                NUMBER_PATTERN,
+                                                                MONEY_AMOUNT,
                                                                 context,
                                                                 NOOP_CONSUMER,
                                                                 -1,
@@ -109,7 +109,7 @@ public class RimiText2Receipt {
                 .getLineMatching(TOTAL_CARD_AMOUNT, 0)
                 .flatMap(l -> l.getWordByIndex(-2))
                 .map(word -> getNumberFromReceiptAndReportError(word,
-                                                                NUMBER_PATTERN,
+                                                                MONEY_AMOUNT,
                                                                 context,
                                                                 NOOP_CONSUMER,
                                                                 -2,
@@ -121,7 +121,7 @@ public class RimiText2Receipt {
                 .getLineMatching(BANK_CARD_PAYMENT_AMOUNT, 0)
                 .flatMap(l -> l.getWordByIndex(-1))
                 .map(word -> getNumberFromReceiptAndReportError(word,
-                                                                NUMBER_PATTERN,
+                                                                MONEY_AMOUNT,
                                                                 context,
                                                                 NOOP_CONSUMER,
                                                                 -1,
@@ -428,7 +428,7 @@ public class RimiText2Receipt {
         return lineMatching
                 .map(tsvLine -> getNumberFromReceiptAndReportError(
                         tsvLine.getWordByIndex(-1),
-                        NUMBER_PATTERN,
+                        MONEY_AMOUNT,
                         context,
                         NOOP_CONSUMER,
                         -1,
