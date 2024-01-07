@@ -13,7 +13,7 @@ import com.github.curiousoddman.receipt.parsing.stats.AllNumberCollector;
 import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
-import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
+import com.github.curiousoddman.receipt.parsing.tess.TesseractConfig;
 import com.github.curiousoddman.receipt.parsing.utils.*;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
 import com.github.curiousoddman.receipt.parsing.validation.TotalAmountValidator;
@@ -226,12 +226,12 @@ public class RimiText2Receipt {
 
         TsvWord tsvWord = wordFromMatchingLine.get();
         TsvLine parentLine = tsvWord.getParentLine();
-        OcrConfig routineRetryOcrConfig = OcrConfig
+        TesseractConfig routineRetryTesseractConfig = TesseractConfig
                 .builder(context.getOriginFile().preprocessedTiff())
                 .ocrDigitsOnly(true)
                 .ocrArea(new Rectangle(HALF_RECEIPT_WIDTH_PX, parentLine.getY(), HALF_RECEIPT_WIDTH_PX, parentLine.getHeight()))
                 .build();
-        String reOcredText = context.getTesseract().doOCR(routineRetryOcrConfig);
+        String reOcredText = context.getTesseract().doOCR(routineRetryTesseractConfig);
         if (isFormatValid(MONEY_AMOUNT, reOcredText)) {
             return toMyBigDecimal(reOcredText);
         }
@@ -253,12 +253,12 @@ public class RimiText2Receipt {
         }
 
         TsvLine matchingLine = optionalMatchingLine.get();
-        OcrConfig routineRetryOcrConfig = OcrConfig
+        TesseractConfig routineRetryTesseractConfig = TesseractConfig
                 .builder(context.getOriginFile().preprocessedTiff())
                 .ocrDigitsOnly(true)
                 .ocrArea(new Rectangle(HALF_RECEIPT_WIDTH_PX, matchingLine.getY(), HALF_RECEIPT_WIDTH_PX, matchingLine.getHeight()))
                 .build();
-        String reOcredText = context.getTesseract().doOCR(routineRetryOcrConfig);
+        String reOcredText = context.getTesseract().doOCR(routineRetryTesseractConfig);
         if (isFormatValid(MONEY_AMOUNT, reOcredText)) {
             return toMyBigDecimal(reOcredText);
         }
@@ -476,21 +476,21 @@ public class RimiText2Receipt {
             Path path = refineLine(ocrResult.getLocation(), context);
             String newValue = null;
             try {
-                OcrConfig ocrConfig;
+                TesseractConfig tesseractConfig;
                 if (path == null) {
-                    ocrConfig = OcrConfig
+                    tesseractConfig = TesseractConfig
                             .builder(context.getOriginFile().preprocessedTiff())
                             .ocrDigitsOnly(true)
                             .ocrArea(ocrResult.getLocation())
                             .build();
                 } else {
-                    ocrConfig = OcrConfig
+                    tesseractConfig = TesseractConfig
                             .builder(path)
                             .ocrDigitsOnly(true)
                             .build();
                 }
 
-                newValue = context.getTesseract().doOCR(ocrConfig);
+                newValue = context.getTesseract().doOCR(tesseractConfig);
             } catch (TesseractException e) {
                 log.error("Failed to re-ocr item numbers", e);
                 receiptItemResult.getReceiptItem().setErrorMessage(e.getMessage());

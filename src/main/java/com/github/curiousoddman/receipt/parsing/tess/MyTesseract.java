@@ -31,11 +31,11 @@ public class MyTesseract extends Tesseract {
         setLanguage("lav");
     }
 
-    public MyTessResult doMyOCR(OcrConfig ocrConfig, OriginFile originFile) throws TesseractException {
+    public MyTessResult doMyOCR(TesseractConfig tesseractConfig, OriginFile originFile) throws TesseractException {
         try {
-            ocrConfig.apply(this);
-            File tiffFile = ocrConfig.getTiffFile().toFile();
-            String tiffFilePath = ocrConfig.getTiffFile().toAbsolutePath().toString();
+            tesseractConfig.apply(this);
+            File tiffFile = tesseractConfig.getTiffFile().toFile();
+            String tiffFilePath = tesseractConfig.getTiffFile().toAbsolutePath().toString();
             String imageFileFormat = ImageIOHelper.getImageFileFormat(tiffFile);
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
             ImageReader reader = readers.next();
@@ -88,10 +88,10 @@ public class MyTesseract extends Tesseract {
         }
     }
 
-    public String doOCR(OcrConfig ocrConfig) throws TesseractException {
-        ocrConfig.apply(this);
-        File tiffFile = ocrConfig.getTiffFile().toFile();
-        String tiffFilePath = ocrConfig.getTiffFile().toAbsolutePath().toString();
+    public String doOCR(TesseractConfig tesseractConfig) throws TesseractException {
+        tesseractConfig.apply(this);
+        File tiffFile = tesseractConfig.getTiffFile().toFile();
+        String tiffFilePath = tesseractConfig.getTiffFile().toAbsolutePath().toString();
 
 //        Rectangle rect = ocrConfig.getOcrArea();
 //        if (rect != null) {
@@ -118,7 +118,7 @@ public class MyTesseract extends Tesseract {
 
                 for (int i = 0; i < imageTotal; i++) {
                     IIOImage oimage = reader.readAll(i, reader.getDefaultReadParam());
-                    result.append(doOCR(oimage, tiffFilePath, i + 1, ocrConfig.isOcrToTsv(), ocrConfig.getOcrArea()));
+                    result.append(doOCR(oimage, tiffFilePath, i + 1, tesseractConfig.isOcrToTsv(), tesseractConfig.getOcrArea()));
                 }
             } finally {
                 reader.dispose();

@@ -12,7 +12,7 @@ import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.stats.ReceiptStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
-import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
+import com.github.curiousoddman.receipt.parsing.tess.TesseractConfig;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationExecutor;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationStatsCollector;
 import lombok.RequiredArgsConstructor;
@@ -122,8 +122,8 @@ public class App implements ApplicationRunner {
     }
 
     @SneakyThrows
-    private MyTessResult runOcr(OcrConfig ocrConfig, OriginFile originFile) {
-        return TESSERACT_THREAD_LOCAL.get().doMyOCR(ocrConfig, originFile);
+    private MyTessResult runOcr(TesseractConfig tesseractConfig, OriginFile originFile) {
+        return TESSERACT_THREAD_LOCAL.get().doMyOCR(tesseractConfig, originFile);
 
     }
 

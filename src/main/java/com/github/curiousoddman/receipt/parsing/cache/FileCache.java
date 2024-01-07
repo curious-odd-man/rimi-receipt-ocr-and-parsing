@@ -3,7 +3,7 @@ package com.github.curiousoddman.receipt.parsing.cache;
 import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
-import com.github.curiousoddman.receipt.parsing.tess.OcrConfig;
+import com.github.curiousoddman.receipt.parsing.tess.TesseractConfig;
 import com.github.curiousoddman.receipt.parsing.utils.ImageUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ public class FileCache {
     }
 
     @SneakyThrows
-    public MyTessResult getOrCreate(Path pdfFile, BiFunction<OcrConfig, OriginFile, MyTessResult> valueSupplier) {
+    public MyTessResult getOrCreate(Path pdfFile, BiFunction<TesseractConfig, OriginFile, MyTessResult> valueSupplier) {
         Path pdfFileName = pdfFile.getFileName();
         Path newRoot = getSubdirectoryPath(pdfFile);
         Path textCacheFilePath = newRoot.resolve(pdfFileName + ".txt");
@@ -54,8 +54,8 @@ public class FileCache {
             ImageUtils.doImagePreprocessing(imageCacheFilePath, preprocessedImagePath);
         }
 
-        OcrConfig ocrConfig = OcrConfig.builder(originFile.preprocessedTiff()).build();
-        MyTessResult tessResult = valueSupplier.apply(ocrConfig, originFile);
+        TesseractConfig tesseractConfig = TesseractConfig.builder(originFile.preprocessedTiff()).build();
+        MyTessResult tessResult = valueSupplier.apply(tesseractConfig, originFile);
         Files.writeString(textCacheFilePath, tessResult.getPlainText());
         Files.writeString(tsvCacheFilePath, tessResult.getTsvText());
         return tessResult;
