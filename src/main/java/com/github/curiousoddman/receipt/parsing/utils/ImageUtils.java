@@ -168,6 +168,10 @@ public class ImageUtils {
         return (pixel & 0x00FFFFFF) == 0;
     }
 
+    public static boolean isBlackPixel(BufferedImage image, int x, int y) {
+        return (image.getRGB(x, y) & 0x00FFFFFF) == 0;
+    }
+
     @Data
     private static class BlackWhitePixelStats {
         private int           blackCount;

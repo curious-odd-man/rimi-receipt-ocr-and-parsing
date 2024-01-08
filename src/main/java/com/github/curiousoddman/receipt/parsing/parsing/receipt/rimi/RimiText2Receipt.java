@@ -9,14 +9,11 @@ import com.github.curiousoddman.receipt.parsing.parsing.receipt.ReceiptItemResul
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvLine;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
-import com.github.curiousoddman.receipt.parsing.stats.AllNumberCollector;
-import com.github.curiousoddman.receipt.parsing.stats.ParsingStatsCollector;
 import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
 import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
 import com.github.curiousoddman.receipt.parsing.tess.TesseractConfig;
 import com.github.curiousoddman.receipt.parsing.utils.*;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
-import com.github.curiousoddman.receipt.parsing.validation.TotalAmountValidator;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -33,7 +30,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -45,27 +41,20 @@ import static java.util.Objects.requireNonNullElse;
 @Component
 @RequiredArgsConstructor
 public class RimiText2Receipt {
-
-    private static final Consumer<TsvWord> NOOP_CONSUMER = v -> {
-    };
-    public static final  int               RECEIPT_WIDTH_PX      = 1441;
-    public static final  int               HALF_RECEIPT_WIDTH_PX = RECEIPT_WIDTH_PX / 2;
-    public static final int X_IMG_PX_MAX = 1300;
-    public static final int X_IMG_PX_MIN = 1260;
+    public static final int RECEIPT_WIDTH_PX      = 1441;
+    public static final int HALF_RECEIPT_WIDTH_PX = RECEIPT_WIDTH_PX / 2;
+    public static final int X_IMG_PX_MAX          = 1300;
+    public static final int X_IMG_PX_MIN          = 1260;
 
     private final Tsv2Struct           tsv2Struct;
     private final ItemNumbersValidator itemNumbersValidator;
-    private final TotalAmountValidator totalAmountValidator;
-    private final AllNumberCollector   allNumberCollector;
 
     public Receipt parse(String fileName,
                          MyTessResult myTessResult,
-                         ParsingStatsCollector parsingStatsCollector,
                          MyTesseract myTesseract) {
         RimiContext context = new RimiContext(
                 myTessResult.getOriginFile(),
                 myTessResult.getTsvDocument(),
-                parsingStatsCollector,
                 myTesseract
         );
         Receipt receipt = Receipt
@@ -100,9 +89,7 @@ public class RimiText2Receipt {
                 .map(word -> getNumberFromReceiptAndReportError(word,
                                                                 MONEY_AMOUNT,
                                                                 context,
-                                                                NOOP_CONSUMER,
-                                                                -1,
-                                                                "s"
+                                                                -1
                 ))
                 .map(NumberOcrResult::getNumber)
                 .forEach(amount -> result.add(Constants.DEPOSIT_COUPON, amount));
@@ -114,9 +101,8 @@ public class RimiText2Receipt {
                 .map(word -> getNumberFromReceiptAndReportError(word,
                                                                 MONEY_AMOUNT,
                                                                 context,
-                                                                NOOP_CONSUMER,
-                                                                -2,
-                                                                "s"))
+                                                                -2
+                ))
                 .map(NumberOcrResult::getNumber)
                 .orElse(null);
 
@@ -126,9 +112,8 @@ public class RimiText2Receipt {
                 .map(word -> getNumberFromReceiptAndReportError(word,
                                                                 MONEY_AMOUNT,
                                                                 context,
-                                                                NOOP_CONSUMER,
-                                                                -1,
-                                                                "s"))
+                                                                -1
+                ))
                 .map(NumberOcrResult::getNumber)
                 .orElse(null);
 
@@ -179,9 +164,8 @@ public class RimiText2Receipt {
                 NumberOcrResult amountNumber = getNumberFromReceiptAndReportError(amountWord,
                                                                                   MONEY_AMOUNT,
                                                                                   context,
-                                                                                  NOOP_CONSUMER,
-                                                                                  -1,
-                                                                                  "s");
+                                                                                  -1
+                );
                 words.remove(words.size() - 1);
                 discountNameBuilder.addAll(words);
                 String name = discountNameBuilder.stream().map(TsvWord::getText).collect(Collectors.joining(" "));
@@ -207,13 +191,11 @@ public class RimiText2Receipt {
             return "Error: Could not find line by pattern";
         }
         TsvLine tsvLine = lineContaining.get(0);
-        context.collectShopNameLocation(tsvLine);
         return tsvLine.getText();
     }
 
     protected String getCashRegisterNumber(RimiContext context) {
         TsvLine tsvLine = context.getLineContaining("Kase Nr", 0);
-        context.collectCashRegisterNumberLocation(tsvLine);
         return tsvLine.getText();
     }
 
@@ -239,9 +221,8 @@ public class RimiText2Receipt {
         return getNumberFromReceiptAndReportError(wordFromMatchingLine,
                                                   MONEY_AMOUNT,
                                                   context,
-                                                  context::collectTotalSavings,
-                                                  2,
-                                                  "L")
+                                                  2
+        )
                 .getNumber();
     }
 
@@ -269,7 +250,6 @@ public class RimiText2Receipt {
         Optional<TsvWord> paymentAmount = context.getLineMatching(PAYMENT_SUM, 0).flatMap(l -> l.getWordByIndex(-1));
         Optional<TsvWord> totalAmount = context.getLineMatching(TOTAL_CARD_AMOUNT, 0).flatMap(l -> l.getWordByIndex(-2));
         Optional<TsvWord> bankCardAmount = context.getLineMatching(BANK_CARD_PAYMENT_AMOUNT, 0).flatMap(l -> l.getWordByIndex(-1));
-        context.setTotalAmountWords(paymentAmount, totalAmount, bankCardAmount);
         return toMyBigDecimal(
                 MONEY_AMOUNT,
                 paymentAmount.map(TsvWord::getText).orElse(null),
@@ -289,13 +269,7 @@ public class RimiText2Receipt {
             if (line != null) {
                 return line
                         .getWordByWordNum(5)
-                        .map(word -> {
-                            MyBigDecimal receiptNumber = toMyBigDecimal(word.getText());
-                            if (!receiptNumber.isError()) {
-                                context.collectShopBrandMoneyLocation(word);
-                            }
-                            return receiptNumber;
-                        })
+                        .map(word -> toMyBigDecimal(word.getText()))
                         .orElse(MyBigDecimal.error("Big decimal cannot be parsed"));
             }
         }
@@ -306,7 +280,6 @@ public class RimiText2Receipt {
     protected String getDocumentNumber(RimiContext context) {
         String text = "Dok. Nr.:";
         TsvLine line = context.getLineContaining(text, 0);
-        context.collectDocumentNumberLocation(line);
         return line.getText().split(text)[0].trim();
     }
 
@@ -394,9 +367,7 @@ public class RimiText2Receipt {
                         tsvLine.getWordByIndex(-1),
                         MONEY_AMOUNT,
                         context,
-                        NOOP_CONSUMER,
-                        -1,
-                        "s"
+                        -1
                 ))
                 .map(NumberOcrResult::getNumber)
                 .orElse(MyBigDecimal.zero());
@@ -412,22 +383,21 @@ public class RimiText2Receipt {
         String unitsWord = unitsTsvWord.getText();
         Optional<TsvWord> countText = priceLine.getWordByWordNum(1);
         Pattern numberPattern = getNumberPattern(unitsWord);
-        NumberOcrResult countOcrResult = getNumberFromReceiptAndReportError(countText, numberPattern, context, context::collectItemCountLocation, 0, "s");
+        NumberOcrResult countOcrResult = getNumberFromReceiptAndReportError(countText, numberPattern, context, 0);
         Optional<TsvWord> pricePerUnitText = priceLine.getWordByWordNum(4 + countOcrResult.getSubsequntWordIndexOffset());
-        NumberOcrResult pricePerUnitOcrResult = getNumberFromReceiptAndReportError(pricePerUnitText, MONEY_AMOUNT, context, context::collectPricePerUnitLocation, 3 + countOcrResult.getSubsequntWordIndexOffset(), "s");
+        NumberOcrResult pricePerUnitOcrResult = getNumberFromReceiptAndReportError(pricePerUnitText, MONEY_AMOUNT, context, 3 + countOcrResult.getSubsequntWordIndexOffset());
 
         NumberOcrResult finalCostOcrResult;
         NumberOcrResult discountOcrResult = NumberOcrResult.of(MyBigDecimal.zero(), null);
         if (discountLine != null) {
-            finalCostOcrResult = getNumberFromReceiptAndReportError(discountLine.getWordByIndex(-1), MONEY_AMOUNT, context, context::collectItemFinalCostWithDiscountLocation, -1, "s");
-            discountOcrResult = getNumberFromReceiptAndReportError(discountLine.getWordByWordNum(2), MONEY_AMOUNT, context, context::collectItemDiscountLocation, 1, "s");
+            finalCostOcrResult = getNumberFromReceiptAndReportError(discountLine.getWordByIndex(-1), MONEY_AMOUNT, context, -1);
+            discountOcrResult = getNumberFromReceiptAndReportError(discountLine.getWordByWordNum(2), MONEY_AMOUNT, context, 1);
         } else {
             int additionalWordIndexOffset = countOcrResult.getSubsequntWordIndexOffset() + pricePerUnitOcrResult.getSubsequntWordIndexOffset();
             Optional<TsvWord> finalCostGroupValue = priceLine.getWordByWordNum(6 + additionalWordIndexOffset);
-            finalCostOcrResult = getNumberFromReceiptAndReportError(finalCostGroupValue, MONEY_AMOUNT, context, context::collectItemFinalCostLocation, 5 + additionalWordIndexOffset, "s");
+            finalCostOcrResult = getNumberFromReceiptAndReportError(finalCostGroupValue, MONEY_AMOUNT, context, 5 + additionalWordIndexOffset);
         }
 
-        context.collectItemUnitsLocation(unitsTsvWord);
         MyBigDecimal discountNumber = discountOcrResult.getNumber();
         if (discountNumber.value().compareTo(BigDecimal.ZERO) > 0) {
             discountNumber = new MyBigDecimal(discountNumber.value().multiply(BigDecimal.valueOf(-1)), discountNumber.text(), null);
@@ -546,54 +516,42 @@ public class RimiText2Receipt {
     private NumberOcrResult getNumberFromReceiptAndReportError(Optional<TsvWord> word,
                                                                Pattern expectedFormat,
                                                                RimiContext context,
-                                                               Consumer<TsvWord> tsvWordConsumer,
-                                                               int wordIndexInLine,
-                                                               String type) {
+                                                               int wordIndexInLine) {
         return word
                 .map(w -> getNumberFromReceiptAndReportError(w,
                                                              expectedFormat,
                                                              context,
-                                                             tsvWordConsumer,
-                                                             wordIndexInLine,
-                                                             type))
+                                                             wordIndexInLine
+                ))
                 .orElse(NumberOcrResult.ofError("Optional word is empty"));
     }
 
     private NumberOcrResult getNumberFromReceipt(TsvWord originalWord,
                                                  Pattern expectedFormat,
                                                  RimiContext context,
-                                                 Consumer<TsvWord> tsvWordConsumer,
-                                                 int wordIndexInLine,
-                                                 String type) {
+                                                 int wordIndexInLine) {
 
         ReceiptNumberExtractionChain receiptNumberExtractionChain = new ReceiptNumberExtractionChain(
                 expectedFormat,
                 context,
-                tsvWordConsumer,
-                tsv2Struct,
-                allNumberCollector
-
+                tsv2Struct
         );
 
-        return receiptNumberExtractionChain.parse(originalWord, wordIndexInLine, type);
+        return receiptNumberExtractionChain.parse(originalWord, wordIndexInLine);
     }
 
     private NumberOcrResult getNumberFromReceiptAndReportError(TsvWord originalWord,
                                                                Pattern expectedFormat,
                                                                RimiContext context,
-                                                               Consumer<TsvWord> tsvWordConsumer,
-                                                               int wordIndexInLine,
-                                                               String type) {
+                                                               int wordIndexInLine) {
 
         ReceiptNumberExtractionChain receiptNumberExtractionChain = new ReceiptNumberExtractionChain(
                 expectedFormat,
                 context,
-                tsvWordConsumer,
-                tsv2Struct,
-                allNumberCollector
+                tsv2Struct
         );
 
-        NumberOcrResult numberOcrResult = receiptNumberExtractionChain.parse(originalWord, wordIndexInLine, type);
+        NumberOcrResult numberOcrResult = receiptNumberExtractionChain.parse(originalWord, wordIndexInLine);
         if (numberOcrResult.isError()) {
             numberOcrResult.reportError();
         }

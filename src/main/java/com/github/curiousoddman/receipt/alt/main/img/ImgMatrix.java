@@ -8,7 +8,8 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.curiousoddman.receipt.alt.main.NumberImageStatisticsProcessor.isBlackPixel;
+import static com.github.curiousoddman.receipt.parsing.utils.ImageUtils.isBlackPixel;
+
 
 @RequiredArgsConstructor
 public class ImgMatrix {
