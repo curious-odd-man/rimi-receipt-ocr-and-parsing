@@ -1,7 +1,7 @@
 package com.github.curiousoddman.receipt.parsing;
 
 
-import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
+import com.github.curiousoddman.receipt.parsing.utils.PathsUtils;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +17,7 @@ public class IgnoreList {
     @SneakyThrows
     public IgnoreList() {
         ignoredFiles = Files
-                .readAllLines(PathsConfig.IGNORE_PDF_CONFIG_PATH)
+                .readAllLines(PathsUtils.IGNORE_PDF_CONFIG_PATH)
                 .stream()
                 .map(line -> line.split(" +")[0])
                 .collect(Collectors.toUnmodifiableSet());

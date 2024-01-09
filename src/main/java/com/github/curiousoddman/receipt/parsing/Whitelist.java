@@ -1,7 +1,7 @@
 package com.github.curiousoddman.receipt.parsing;
 
 
-import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
+import com.github.curiousoddman.receipt.parsing.utils.PathsUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,7 +20,7 @@ public class Whitelist {
     @SneakyThrows
     public Whitelist() {
         whiltelist = Files
-                .readAllLines(PathsConfig.WHITELIST_CONFIG_PATH)
+                .readAllLines(PathsUtils.WHITELIST_CONFIG_PATH)
                 .stream()
                 .filter(line -> !line.startsWith("#"))
                 .filter(line -> !line.isBlank())

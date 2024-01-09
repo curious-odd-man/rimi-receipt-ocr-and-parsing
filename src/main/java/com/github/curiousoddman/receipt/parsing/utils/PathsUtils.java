@@ -1,8 +1,12 @@
-package com.github.curiousoddman.receipt.parsing.config;
+package com.github.curiousoddman.receipt.parsing.utils;
 
+import com.github.curiousoddman.receipt.parsing.ocr.OcrService;
+import lombok.SneakyThrows;
+
+import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class PathsConfig {
+public class PathsUtils {
     public static final Path CACHES                 = Path.of("W:\\Programming\\git\\caches");
     public static final Path PRIVATE_TOOLS_ROOT     = Path.of("W:\\Programming\\git\\private-tools");
     public static final Path ALL_NUMBER_WORDS_JSON  = CACHES.resolve("all-number-words.json");
@@ -12,4 +16,16 @@ public class PathsConfig {
     public static final Path WHITELIST_CONFIG_PATH  = PRIVATE_TOOLS_ROOT.resolve("receipts-parsing\\data\\whitelist.txt");
 
     public static final String TESSERACT_MODEL_PATH = PRIVATE_TOOLS_ROOT.resolve("receipts-parsing\\tes").toAbsolutePath().toString();
+
+    @SneakyThrows
+    public static Path getSubdirectoryPath(Path pdfFile) {
+        String fileName = pdfFile.toFile().getName();
+        int i = fileName.indexOf('.');
+        String dirName = fileName.substring(0, i);
+        Path newRoot = OcrService.FILE_CACHE_DIR.resolve(dirName);
+        if (!Files.exists(newRoot)) {
+            Files.createDirectories(newRoot);
+        }
+        return newRoot;
+    }
 }

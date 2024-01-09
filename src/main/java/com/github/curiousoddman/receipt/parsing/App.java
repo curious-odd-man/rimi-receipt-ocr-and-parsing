@@ -1,16 +1,11 @@
 package com.github.curiousoddman.receipt.parsing;
 
-import com.github.curiousoddman.receipt.parsing.ocr.FileCache;
-import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
-import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
-import com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi.RimiText2Receipt;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
-import com.github.curiousoddman.receipt.parsing.stats.ReceiptStatsCollector;
 import com.github.curiousoddman.receipt.parsing.ocr.OcrResult;
-import com.github.curiousoddman.receipt.parsing.ocr.OcrService;
-import com.github.curiousoddman.receipt.parsing.ocr.OcrConfig;
+import com.github.curiousoddman.receipt.parsing.ocr.OcrServiceProvider;
+import com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi.RimiText2Receipt;
+import com.github.curiousoddman.receipt.parsing.stats.ReceiptStatsCollector;
+import com.github.curiousoddman.receipt.parsing.utils.PathsUtils;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationExecutor;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationStatsCollector;
 import lombok.RequiredArgsConstructor;
@@ -36,25 +31,19 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 @Component
 @RequiredArgsConstructor
 public class App implements ApplicationRunner {
-    private static final int                     MAX_PARALLEL_THREADS   = 5;
-    private static final ThreadLocal<OcrService> TESSERACT_THREAD_LOCAL = ThreadLocal
-            .withInitial(() -> {
-                log.info("New Tesseract created");
-                return new OcrService();
-            });
+    private static final int MAX_PARALLEL_THREADS = 5;
 
     private final RimiText2Receipt            rimiText2Receipt;
-    private final FileCache                   fileCache;
     private final IgnoreList                  ignoreList;
     private final Whitelist                   whitelist;
     private final ValidationExecutor          validationExecutor;
-    private final Tsv2Struct                  tsv2Struct;
+    private final OcrServiceProvider          ocrServiceProvider;
     private final List<ReceiptStatsCollector> receiptStatsCollectors;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
         ValidationStatsCollector validationStatsCollector = new ValidationStatsCollector();
-        try (Stream<Path> files = Files.list(PathsConfig.PDF_INPUT_DIR)) {
+        try (Stream<Path> files = Files.list(PathsUtils.PDF_INPUT_DIR)) {
             List<Path> allPdfFiles = files.filter(App::isPdfFile).toList();
             if (MAX_PARALLEL_THREADS == 0) {
                 for (Path pdfFile : allPdfFiles) {
@@ -73,7 +62,7 @@ public class App implements ApplicationRunner {
         }
 
         receiptStatsCollectors.forEach(ReceiptStatsCollector::printSummary);
-        validationExecutor.saveResult(PathsConfig.VALIDATION_RESULT_JSON);
+        validationExecutor.saveResult(PathsUtils.VALIDATION_RESULT_JSON);
     }
 
     private void safeTransformFile(Path pdfFile, ValidationStatsCollector validationStatsCollector) {
@@ -100,25 +89,16 @@ public class App implements ApplicationRunner {
 
         log.info("Starting...");
 
-        OcrResult ocrResult = fileCache.getOrCreate(pdfFile, this::runOcr);
-        TsvDocument tsvDocument = tsv2Struct.parseTsv(ocrResult.getTsvText());
-        ocrResult.setTsvDocument(tsvDocument);
-        fileCache.create(Path.of(sourcePdfName + ".tsv.json"), OBJECT_WRITER.writeValueAsString(tsvDocument));
-        Receipt receipt = rimiText2Receipt.parse(sourcePdfName, ocrResult, TESSERACT_THREAD_LOCAL.get());
+        OcrResult ocrResult = ocrServiceProvider.get().getCachedOrDoOcr(pdfFile);
+        Receipt receipt = rimiText2Receipt.parse(sourcePdfName, ocrResult, ocrServiceProvider.get());
         String receiptJson = OBJECT_WRITER.writeValueAsString(receipt);
 
-        fileCache.create(Path.of(sourcePdfName + ".json"), receiptJson);
+        Files.writeString(ocrResult.cacheDir().resolve(sourcePdfName + ".json"), receiptJson);
 
         validationExecutor.execute(validationStatsCollector, receipt);
         receiptStatsCollectors.forEach(collector -> collector.collect(receipt));
 
         log.info("Completed");
-    }
-
-    @SneakyThrows
-    private OcrResult runOcr(OcrConfig ocrConfig, OriginFile originFile) {
-        return TESSERACT_THREAD_LOCAL.get().doMyOCR(ocrConfig, originFile);
-
     }
 
     private static boolean isPdfFile(Path file) {

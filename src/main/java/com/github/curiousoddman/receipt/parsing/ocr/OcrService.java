@@ -1,7 +1,10 @@
 package com.github.curiousoddman.receipt.parsing.ocr;
 
-import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
+import com.github.curiousoddman.receipt.parsing.utils.ImageUtils;
+import com.github.curiousoddman.receipt.parsing.utils.PathsUtils;
 import com.sun.jna.Pointer;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -20,18 +23,65 @@ import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Properties;
 
+import static com.github.curiousoddman.receipt.parsing.utils.ImageUtils.getImageFile;
+import static com.github.curiousoddman.receipt.parsing.utils.ImageUtils.saveFileWithRectangle;
+import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WRITER;
+
 @Slf4j
 public class OcrService extends Tesseract {
+    private final       boolean    SAVE_DEBUG_IMAGE = false;
+    public static final Path       FILE_CACHE_DIR   = PathsUtils.CACHES.resolve("cache");
+    private final       Tsv2Struct tsv2Struct;
 
-    public OcrService() {
-        setDatapath(PathsConfig.TESSERACT_MODEL_PATH);
+    @SneakyThrows
+    public OcrService(Tsv2Struct tsv2Struct) {
+        this.tsv2Struct = tsv2Struct;
+        Files.createDirectories(FILE_CACHE_DIR);
+        setDatapath(PathsUtils.TESSERACT_MODEL_PATH);
         setLanguage("lav");
     }
 
-    public OcrResult doMyOCR(OcrConfig ocrConfig, OriginFile originFile) throws TesseractException {
+    @SneakyThrows
+    public OcrResult getCachedOrDoOcr(Path pdfFile) {
+        Path pdfFileName = pdfFile.getFileName();
+        Path newRoot = PathsUtils.getSubdirectoryPath(pdfFile);
+        Path textCacheFilePath = newRoot.resolve(pdfFileName + ".txt");
+        Path tsvCacheFilePath = newRoot.resolve(pdfFileName + ".tsv");
+        Path imageCacheFilePath = newRoot.resolve(pdfFileName + ".tiff");
+        Path preprocessedImagePath = newRoot.resolve(pdfFileName + ".preprocessed.tiff");
+        Path tsvDocumentFilePath = newRoot.resolve(pdfFileName + ".tsv.json");
+        OriginFile originFile = new OriginFile(pdfFile, imageCacheFilePath, preprocessedImagePath);
+        if (Files.exists(textCacheFilePath) && Files.exists(tsvCacheFilePath)) {
+            return new OcrResult(
+                    originFile,
+                    Files.readString(textCacheFilePath),
+                    tsv2Struct.parseTsv(Files.readString(tsvCacheFilePath))
+            );
+        }
+
+        if (!Files.exists(imageCacheFilePath)) {
+            File imageFile = getImageFile(pdfFile.toFile());
+            Files.copy(imageFile.toPath(), imageCacheFilePath);
+        }
+
+        if (!Files.exists(preprocessedImagePath)) {
+            ImageUtils.doImagePreprocessing(imageCacheFilePath, preprocessedImagePath);
+        }
+
+        OcrConfig ocrConfig = OcrConfig.builder(originFile.preprocessedTiff()).build();
+        OcrResult tessResult = doMyOCR(ocrConfig, originFile);
+        Files.writeString(textCacheFilePath, tessResult.plainText());
+        Files.writeString(tsvCacheFilePath, tessResult.tsvDocument().getTsvFileContents());
+        Files.writeString(tsvDocumentFilePath, OBJECT_WRITER.writeValueAsString(tessResult.tsvDocument()));
+        return tessResult;
+    }
+
+    private OcrResult doMyOCR(OcrConfig ocrConfig, OriginFile originFile) throws TesseractException {
         try {
             ocrConfig.apply(this);
             File tiffFile = ocrConfig.getTiffFile().toFile();
@@ -54,16 +104,17 @@ public class OcrService extends Tesseract {
                     tsvTextResult.append(doOCR(oimage, tiffFilePath, i + 1, true, null));
                 }
 
-
             } finally {
                 reader.dispose();
                 dispose();
             }
 
+            TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvTextResult.toString());
+
             return new OcrResult(
                     originFile,
                     plainTextResult.toString(),
-                    tsvTextResult.toString()
+                    tsvDocument
             );
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -93,16 +144,18 @@ public class OcrService extends Tesseract {
         File tiffFile = ocrConfig.getTiffFile().toFile();
         String tiffFilePath = ocrConfig.getTiffFile().toAbsolutePath().toString();
 
-//        Rectangle rect = ocrConfig.getOcrArea();
-//        if (rect != null) {
-//            int x = rect.x;
-//            int y = rect.y;
-//            int width = rect.width;
-//            int height = rect.height;
-//            Path rectangledFileName = Path.of(ocrConfig.getTiffFile() + String.format("_%d_%d_%d_%d.tiff", x, y, width, height));
-//            log.info("Saving rectangled file: {}", rectangledFileName.toAbsolutePath());
-//            saveFileWithRectangle(tiffFile, rectangledFileName, x, y, width, height);
-//        }
+        if (SAVE_DEBUG_IMAGE) {
+            Rectangle rect = ocrConfig.getOcrArea();
+            if (rect != null) {
+                int x = rect.x;
+                int y = rect.y;
+                int width = rect.width;
+                int height = rect.height;
+                Path rectangledFileName = Path.of(ocrConfig.getTiffFile() + String.format("_%d_%d_%d_%d.tiff", x, y, width, height));
+                log.info("Saving rectangled file: {}", rectangledFileName.toAbsolutePath());
+                saveFileWithRectangle(tiffFile, rectangledFileName, x, y, width, height);
+            }
+        }
 
         try {
             String imageFileFormat = ImageIOHelper.getImageFileFormat(tiffFile);
@@ -142,7 +195,6 @@ public class OcrService extends Tesseract {
         try {
             RenderedImage renderedImage = oimage.getRenderedImage();
             setImage(renderedImage, rect);
-//            setROI(rect);
             ITessAPI.TessBaseAPI handle = getHandle();
             TessAPI api = getAPI();
             if (filename != null && !filename.isEmpty()) {
@@ -159,11 +211,9 @@ public class OcrService extends Tesseract {
             api.TessDeleteText(textPtr);
             return str;
         } catch (IOException ioe) {
-            // skip the problematic image
             log.warn(ioe.getMessage(), ioe);
         }
 
         return text;
     }
-
 }

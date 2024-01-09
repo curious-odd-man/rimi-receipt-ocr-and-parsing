@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 @Getter
 @RequiredArgsConstructor
 public class TsvDocument {
+    @JsonIgnore
+    private final String        tsvFileContents;
     private final List<TsvPage> pages;
 
     @JsonIgnore

@@ -53,8 +53,8 @@ public class RimiText2Receipt {
                          OcrResult ocrResult,
                          OcrService ocrService) {
         RimiContext context = new RimiContext(
-                ocrResult.getOriginFile(),
-                ocrResult.getTsvDocument(),
+                ocrResult.originFile(),
+                ocrResult.tsvDocument(),
                 ocrService
         );
         Receipt receipt = Receipt
