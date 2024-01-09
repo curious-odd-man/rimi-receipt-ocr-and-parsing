@@ -1,6 +1,6 @@
 package com.github.curiousoddman.receipt.parsing;
 
-import com.github.curiousoddman.receipt.parsing.cache.FileCache;
+import com.github.curiousoddman.receipt.parsing.ocr.FileCache;
 import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
@@ -8,9 +8,9 @@ import com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi.RimiText2Re
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
 import com.github.curiousoddman.receipt.parsing.stats.ReceiptStatsCollector;
-import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
-import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
-import com.github.curiousoddman.receipt.parsing.tess.TesseractConfig;
+import com.github.curiousoddman.receipt.parsing.ocr.OcrResult;
+import com.github.curiousoddman.receipt.parsing.ocr.OcrService;
+import com.github.curiousoddman.receipt.parsing.ocr.OcrConfig;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationExecutor;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationStatsCollector;
 import lombok.RequiredArgsConstructor;
@@ -36,11 +36,11 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 @Component
 @RequiredArgsConstructor
 public class App implements ApplicationRunner {
-    private static final int                      MAX_PARALLEL_THREADS   = 5;
-    private static final ThreadLocal<MyTesseract> TESSERACT_THREAD_LOCAL = ThreadLocal
+    private static final int                     MAX_PARALLEL_THREADS   = 5;
+    private static final ThreadLocal<OcrService> TESSERACT_THREAD_LOCAL = ThreadLocal
             .withInitial(() -> {
                 log.info("New Tesseract created");
-                return new MyTesseract();
+                return new OcrService();
             });
 
     private final RimiText2Receipt            rimiText2Receipt;
@@ -100,11 +100,11 @@ public class App implements ApplicationRunner {
 
         log.info("Starting...");
 
-        MyTessResult myTessResult = fileCache.getOrCreate(pdfFile, this::runOcr);
-        TsvDocument tsvDocument = tsv2Struct.parseTsv(myTessResult.getTsvText());
-        myTessResult.setTsvDocument(tsvDocument);
+        OcrResult ocrResult = fileCache.getOrCreate(pdfFile, this::runOcr);
+        TsvDocument tsvDocument = tsv2Struct.parseTsv(ocrResult.getTsvText());
+        ocrResult.setTsvDocument(tsvDocument);
         fileCache.create(Path.of(sourcePdfName + ".tsv.json"), OBJECT_WRITER.writeValueAsString(tsvDocument));
-        Receipt receipt = rimiText2Receipt.parse(sourcePdfName, myTessResult, TESSERACT_THREAD_LOCAL.get());
+        Receipt receipt = rimiText2Receipt.parse(sourcePdfName, ocrResult, TESSERACT_THREAD_LOCAL.get());
         String receiptJson = OBJECT_WRITER.writeValueAsString(receipt);
 
         fileCache.create(Path.of(sourcePdfName + ".json"), receiptJson);
@@ -116,8 +116,8 @@ public class App implements ApplicationRunner {
     }
 
     @SneakyThrows
-    private MyTessResult runOcr(TesseractConfig tesseractConfig, OriginFile originFile) {
-        return TESSERACT_THREAD_LOCAL.get().doMyOCR(tesseractConfig, originFile);
+    private OcrResult runOcr(OcrConfig ocrConfig, OriginFile originFile) {
+        return TESSERACT_THREAD_LOCAL.get().doMyOCR(ocrConfig, originFile);
 
     }
 

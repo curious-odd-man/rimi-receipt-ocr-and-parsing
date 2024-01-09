@@ -4,7 +4,7 @@ import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvLine;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
-import com.github.curiousoddman.receipt.parsing.tess.MyTesseract;
+import com.github.curiousoddman.receipt.parsing.ocr.OcrService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
@@ -18,8 +18,8 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class RimiContext {
     private final OriginFile            originFile;
-    private final TsvDocument           tsvDocument;
-    private final MyTesseract           tesseract;
+    private final TsvDocument tsvDocument;
+    private final OcrService  tesseract;
 
     private Optional<TsvWord> paymentAmount;
     private Optional<TsvWord> totalAmount;

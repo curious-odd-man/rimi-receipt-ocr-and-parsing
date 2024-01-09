@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.alt.main;
+package com.github.curiousoddman.receipt.playground;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.pattern.OpenCV;
@@ -13,7 +13,7 @@ import static org.opencv.imgcodecs.Imgcodecs.IMREAD_GRAYSCALE;
 import static org.opencv.imgproc.Imgproc.*;
 
 @Slf4j
-public class TryDifferentImgPreproccessingThresholds {
+public class TryDifferentImgPreproccessingThresholdsMain {
     public static void main(String[] args) {
         OpenCV.loadLocally();
 

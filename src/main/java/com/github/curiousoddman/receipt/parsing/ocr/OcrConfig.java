@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.parsing.tess;
+package com.github.curiousoddman.receipt.parsing.ocr;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import static net.sourceforge.tess4j.ITessAPI.TessPageSegMode.PSM_AUTO_OSD;
 
 @Getter
 @Builder(builderMethodName = "hiddenBuilder")
-public class TesseractConfig {
+public class OcrConfig {
     private final Path      tiffFile;
     private final Rectangle ocrArea;
     @Builder.Default
@@ -25,27 +25,27 @@ public class TesseractConfig {
     @Builder.Default
     private final int       ocrEngineMode = OEM_LSTM_ONLY;
 
-    public static TesseractConfigBuilder builder(Path tiffFile) {
+    public static OcrConfigBuilder builder(Path tiffFile) {
         return hiddenBuilder().tiffFile(tiffFile);
     }
 
-    public void apply(MyTesseract myTesseract) {
-        myTesseract.setVariable("tessedit_char_blacklist", "_—");
+    public void apply(OcrService ocrService) {
+        ocrService.setVariable("tessedit_char_blacklist", "_—");
         if (ocrDigitsOnly) {
-            myTesseract.setPageSegMode(ITessAPI.TessPageSegMode.PSM_RAW_LINE);
-            myTesseract.setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_TESSERACT_ONLY);
-            myTesseract.setVariable("tessedit_char_whitelist", "-.,0123456789");
+            ocrService.setPageSegMode(ITessAPI.TessPageSegMode.PSM_RAW_LINE);
+            ocrService.setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_TESSERACT_ONLY);
+            ocrService.setVariable("tessedit_char_whitelist", "-.,0123456789");
         } else {
 
             if (ocrArea != null) {
-                myTesseract.setPageSegMode(ITessAPI.TessPageSegMode.PSM_SINGLE_BLOCK);
-                myTesseract.setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_DEFAULT);
+                ocrService.setPageSegMode(ITessAPI.TessPageSegMode.PSM_SINGLE_BLOCK);
+                ocrService.setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_DEFAULT);
             } else {
-                myTesseract.setPageSegMode(pageSegMode);
-                myTesseract.setOcrEngineMode(ocrEngineMode);
+                ocrService.setPageSegMode(pageSegMode);
+                ocrService.setOcrEngineMode(ocrEngineMode);
             }
 
-            myTesseract.getProperties().remove("tessedit_char_whitelist");
+            ocrService.getProperties().remove("tessedit_char_whitelist");
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.parsing.tess;
+package com.github.curiousoddman.receipt.parsing.ocr;
 
 import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
@@ -24,18 +24,18 @@ import java.util.Iterator;
 import java.util.Properties;
 
 @Slf4j
-public class MyTesseract extends Tesseract {
+public class OcrService extends Tesseract {
 
-    public MyTesseract() {
+    public OcrService() {
         setDatapath(PathsConfig.TESSERACT_MODEL_PATH);
         setLanguage("lav");
     }
 
-    public MyTessResult doMyOCR(TesseractConfig tesseractConfig, OriginFile originFile) throws TesseractException {
+    public OcrResult doMyOCR(OcrConfig ocrConfig, OriginFile originFile) throws TesseractException {
         try {
-            tesseractConfig.apply(this);
-            File tiffFile = tesseractConfig.getTiffFile().toFile();
-            String tiffFilePath = tesseractConfig.getTiffFile().toAbsolutePath().toString();
+            ocrConfig.apply(this);
+            File tiffFile = ocrConfig.getTiffFile().toFile();
+            String tiffFilePath = ocrConfig.getTiffFile().toAbsolutePath().toString();
             String imageFileFormat = ImageIOHelper.getImageFileFormat(tiffFile);
             Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(imageFileFormat);
             ImageReader reader = readers.next();
@@ -60,7 +60,7 @@ public class MyTesseract extends Tesseract {
                 dispose();
             }
 
-            return new MyTessResult(
+            return new OcrResult(
                     originFile,
                     plainTextResult.toString(),
                     tsvTextResult.toString()
@@ -88,10 +88,10 @@ public class MyTesseract extends Tesseract {
         }
     }
 
-    public String doOCR(TesseractConfig tesseractConfig) throws TesseractException {
-        tesseractConfig.apply(this);
-        File tiffFile = tesseractConfig.getTiffFile().toFile();
-        String tiffFilePath = tesseractConfig.getTiffFile().toAbsolutePath().toString();
+    public String doOCR(OcrConfig ocrConfig) throws TesseractException {
+        ocrConfig.apply(this);
+        File tiffFile = ocrConfig.getTiffFile().toFile();
+        String tiffFilePath = ocrConfig.getTiffFile().toAbsolutePath().toString();
 
 //        Rectangle rect = ocrConfig.getOcrArea();
 //        if (rect != null) {
@@ -118,7 +118,7 @@ public class MyTesseract extends Tesseract {
 
                 for (int i = 0; i < imageTotal; i++) {
                     IIOImage oimage = reader.readAll(i, reader.getDefaultReadParam());
-                    result.append(doOCR(oimage, tiffFilePath, i + 1, tesseractConfig.isOcrToTsv(), tesseractConfig.getOcrArea()));
+                    result.append(doOCR(oimage, tiffFilePath, i + 1, ocrConfig.isOcrToTsv(), ocrConfig.getOcrArea()));
                 }
             } finally {
                 reader.dispose();

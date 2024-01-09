@@ -1,9 +1,7 @@
-package com.github.curiousoddman.receipt.parsing.cache;
+package com.github.curiousoddman.receipt.parsing.ocr;
 
 import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
-import com.github.curiousoddman.receipt.parsing.tess.MyTessResult;
-import com.github.curiousoddman.receipt.parsing.tess.TesseractConfig;
 import com.github.curiousoddman.receipt.parsing.utils.ImageUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +26,7 @@ public class FileCache {
     }
 
     @SneakyThrows
-    public MyTessResult getOrCreate(Path pdfFile, BiFunction<TesseractConfig, OriginFile, MyTessResult> valueSupplier) {
+    public OcrResult getOrCreate(Path pdfFile, BiFunction<OcrConfig, OriginFile, OcrResult> valueSupplier) {
         Path pdfFileName = pdfFile.getFileName();
         Path newRoot = getSubdirectoryPath(pdfFile);
         Path textCacheFilePath = newRoot.resolve(pdfFileName + ".txt");
@@ -37,7 +35,7 @@ public class FileCache {
         Path preprocessedImagePath = newRoot.resolve(pdfFileName + ".preprocessed.tiff");
         OriginFile originFile = new OriginFile(pdfFile, imageCacheFilePath, preprocessedImagePath);
         if (Files.exists(textCacheFilePath) && Files.exists(tsvCacheFilePath)) {
-            return new MyTessResult(
+            return new OcrResult(
                     originFile,
                     Files.readString(textCacheFilePath),
                     Files.readString(tsvCacheFilePath)
@@ -54,8 +52,8 @@ public class FileCache {
             ImageUtils.doImagePreprocessing(imageCacheFilePath, preprocessedImagePath);
         }
 
-        TesseractConfig tesseractConfig = TesseractConfig.builder(originFile.preprocessedTiff()).build();
-        MyTessResult tessResult = valueSupplier.apply(tesseractConfig, originFile);
+        OcrConfig ocrConfig = OcrConfig.builder(originFile.preprocessedTiff()).build();
+        OcrResult tessResult = valueSupplier.apply(ocrConfig, originFile);
         Files.writeString(textCacheFilePath, tessResult.getPlainText());
         Files.writeString(tsvCacheFilePath, tessResult.getTsvText());
         return tessResult;

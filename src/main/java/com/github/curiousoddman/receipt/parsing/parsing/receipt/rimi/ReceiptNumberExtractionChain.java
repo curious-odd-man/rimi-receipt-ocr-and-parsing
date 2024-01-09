@@ -5,7 +5,7 @@ import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvLine;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
-import com.github.curiousoddman.receipt.parsing.tess.TesseractConfig;
+import com.github.curiousoddman.receipt.parsing.ocr.OcrConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.TesseractException;
@@ -67,12 +67,12 @@ public class ReceiptNumberExtractionChain {
         String value = null;
         Rectangle originalWordRectangle = originalWord.getWordRect();
         try {
-            TesseractConfig tesseractConfig = TesseractConfig
+            OcrConfig ocrConfig = OcrConfig
                     .builder(context.getOriginFile().preprocessedTiff())
                     .ocrDigitsOnly(true)
                     .ocrArea(originalWordRectangle)
                     .build();
-            value = context.getTesseract().doOCR(tesseractConfig);
+            value = context.getTesseract().doOCR(ocrConfig);
             if (isFormatValid(expectedFormat, value)) {
                 return NumberOcrResult.of(toMyBigDecimal(value), originalWordRectangle);
             }
@@ -89,13 +89,13 @@ public class ReceiptNumberExtractionChain {
         TsvLine line = null;
         String text;
         try {
-            TesseractConfig tesseractConfig = TesseractConfig
+            OcrConfig ocrConfig = OcrConfig
                     .builder(context.getOriginFile().preprocessedTiff())
                     .ocrArea(originalWord.getParentLine().getRectangle())
                     .ocrToTsv(true)
                     .build();
             // Finally try to re-ocr whole line and get the word by the same word num.
-            String tsvText = context.getTesseract().doOCR(tesseractConfig);
+            String tsvText = context.getTesseract().doOCR(ocrConfig);
             TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvText);
             List<TsvLine> lines = tsvDocument.getLines();
             line = lines.get(lines.size() - 1);     // Rectangle of line is streched up, touching previous line, that appears here as well.
