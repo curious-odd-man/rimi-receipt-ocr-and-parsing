@@ -34,23 +34,23 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 
 @Slf4j
 public class OcrService extends Tesseract {
-    private static final boolean SAVE_DEBUG_IMAGE = false;
-    public static final  Path    FILE_CACHE_DIR   = PathsUtils.getCachesRoot.resolve("cache");
-
-    private final Tsv2Struct tsv2Struct;
+    private static final boolean    SAVE_DEBUG_IMAGE = false;
+    private final        PathsUtils pathsUtils;
+    private final        Tsv2Struct tsv2Struct;
 
     @SneakyThrows
-    public OcrService(Tsv2Struct tsv2Struct) {
+    public OcrService(PathsUtils pathsUtils, Tsv2Struct tsv2Struct) {
+        this.pathsUtils = pathsUtils;
         this.tsv2Struct = tsv2Struct;
-        Files.createDirectories(FILE_CACHE_DIR);
-        setDatapath(PathsUtils.getTesseractModelPath);
+        Files.createDirectories(ocrCachesRoot(pathsUtils));
+        setDatapath(pathsUtils.getTesseractModelPath());
         setLanguage("lav");
     }
 
     @SneakyThrows
     public OcrResult getCachedOrDoOcr(Path pdfFile) {
         Path pdfFileName = pdfFile.getFileName();
-        Path newRoot = PathsUtils.getSubdirectoryPath(pdfFile);
+        Path newRoot = getSubdirectoryPath(pdfFile);
         Path textCacheFilePath = newRoot.resolve(pdfFileName + ".txt");
         Path tsvCacheFilePath = newRoot.resolve(pdfFileName + ".tsv");
         Path imageCacheFilePath = newRoot.resolve(pdfFileName + ".tiff");
@@ -216,5 +216,21 @@ public class OcrService extends Tesseract {
         }
 
         return text;
+    }
+
+    private static Path ocrCachesRoot(PathsUtils pathsUtils) {
+        return pathsUtils.getCachesRoot().resolve("cache");
+    }
+
+    @SneakyThrows
+    private Path getSubdirectoryPath(Path pdfFile) {
+        String fileName = pdfFile.toFile().getName();
+        int i = fileName.indexOf('.');
+        String dirName = fileName.substring(0, i);
+        Path newRoot = ocrCachesRoot(pathsUtils).resolve(dirName);
+        if (!Files.exists(newRoot)) {
+            Files.createDirectories(newRoot);
+        }
+        return newRoot;
     }
 }

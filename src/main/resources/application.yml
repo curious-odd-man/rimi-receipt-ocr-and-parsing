@@ -1,0 +1,4 @@
+config:
+  paths:
+    caches-root: ../caches
+    input-dir: ../private-tools/gmail-client/output

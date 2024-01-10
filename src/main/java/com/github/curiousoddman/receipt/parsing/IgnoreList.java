@@ -2,6 +2,7 @@ package com.github.curiousoddman.receipt.parsing;
 
 
 import com.github.curiousoddman.receipt.parsing.utils.PathsUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 
@@ -15,9 +16,9 @@ public class IgnoreList {
     private final Set<String> ignoredFiles;
 
     @SneakyThrows
-    public IgnoreList() {
+    public IgnoreList(PathsUtils pathsUtils) {
         ignoredFiles = Files
-                .readAllLines(PathsUtils.getIgnoreFilePath)
+                .readAllLines(pathsUtils.getIgnoreFilePath())
                 .stream()
                 .map(line -> line.split(" +")[0])
                 .collect(Collectors.toUnmodifiableSet());

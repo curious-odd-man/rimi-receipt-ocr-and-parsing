@@ -18,9 +18,9 @@ public class Whitelist {
     private final Set<String> whiltelist;
 
     @SneakyThrows
-    public Whitelist() {
+    public Whitelist(PathsUtils pathsUtils) {
         whiltelist = Files
-                .readAllLines(PathsUtils.getWhitelistFilePath)
+                .readAllLines(pathsUtils.getWhitelistFilePath())
                 .stream()
                 .filter(line -> !line.startsWith("#"))
                 .filter(line -> !line.isBlank())

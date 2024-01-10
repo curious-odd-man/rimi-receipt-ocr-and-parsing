@@ -37,11 +37,12 @@ public class App implements ApplicationRunner {
     private final Whitelist          whitelist;
     private final ValidationExecutor validationExecutor;
     private final OcrServiceProvider ocrServiceProvider;
+    private final PathsUtils         pathsUtils;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
         ValidationStatsCollector validationStatsCollector = new ValidationStatsCollector();
-        try (Stream<Path> files = Files.list(PathsUtils.getPdfInputDir)) {
+        try (Stream<Path> files = Files.list(pathsUtils.getPdfInputDir())) {
             List<Path> allPdfFiles = files.filter(PathsUtils::isPdfFile).toList();
             if (MAX_PARALLEL_THREADS == 0) {
                 for (Path pdfFile : allPdfFiles) {
@@ -59,7 +60,7 @@ public class App implements ApplicationRunner {
             }
         }
 
-        validationExecutor.saveResult(PathsUtils.getValidationResultPath);
+        validationExecutor.saveResult(pathsUtils.getValidationResultPath());
     }
 
     private void safeTransformFile(Path pdfFile, ValidationStatsCollector validationStatsCollector) {
