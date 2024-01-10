@@ -34,15 +34,16 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 
 @Slf4j
 public class OcrService extends Tesseract {
-    private final       boolean    SAVE_DEBUG_IMAGE = false;
-    public static final Path       FILE_CACHE_DIR   = PathsUtils.CACHES.resolve("cache");
-    private final       Tsv2Struct tsv2Struct;
+    private static final boolean SAVE_DEBUG_IMAGE = false;
+    public static final  Path    FILE_CACHE_DIR   = PathsUtils.getCachesRoot.resolve("cache");
+
+    private final Tsv2Struct tsv2Struct;
 
     @SneakyThrows
     public OcrService(Tsv2Struct tsv2Struct) {
         this.tsv2Struct = tsv2Struct;
         Files.createDirectories(FILE_CACHE_DIR);
-        setDatapath(PathsUtils.TESSERACT_MODEL_PATH);
+        setDatapath(PathsUtils.getTesseractModelPath);
         setLanguage("lav");
     }
 

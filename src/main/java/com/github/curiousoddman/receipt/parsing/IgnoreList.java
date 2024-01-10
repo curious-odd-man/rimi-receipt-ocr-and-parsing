@@ -17,7 +17,7 @@ public class IgnoreList {
     @SneakyThrows
     public IgnoreList() {
         ignoredFiles = Files
-                .readAllLines(PathsUtils.IGNORE_PDF_CONFIG_PATH)
+                .readAllLines(PathsUtils.getIgnoreFilePath)
                 .stream()
                 .map(line -> line.split(" +")[0])
                 .collect(Collectors.toUnmodifiableSet());

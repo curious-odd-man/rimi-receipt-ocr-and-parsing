@@ -4,7 +4,6 @@ import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.ocr.OcrResult;
 import com.github.curiousoddman.receipt.parsing.ocr.OcrServiceProvider;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi.RimiText2Receipt;
-import com.github.curiousoddman.receipt.parsing.stats.ReceiptStatsCollector;
 import com.github.curiousoddman.receipt.parsing.utils.PathsUtils;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationExecutor;
 import com.github.curiousoddman.receipt.parsing.validation.ValidationStatsCollector;
@@ -33,18 +32,17 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 public class App implements ApplicationRunner {
     private static final int MAX_PARALLEL_THREADS = 5;
 
-    private final RimiText2Receipt            rimiText2Receipt;
-    private final IgnoreList                  ignoreList;
-    private final Whitelist                   whitelist;
-    private final ValidationExecutor          validationExecutor;
-    private final OcrServiceProvider          ocrServiceProvider;
-    private final List<ReceiptStatsCollector> receiptStatsCollectors;
+    private final RimiText2Receipt   rimiText2Receipt;
+    private final IgnoreList         ignoreList;
+    private final Whitelist          whitelist;
+    private final ValidationExecutor validationExecutor;
+    private final OcrServiceProvider ocrServiceProvider;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
         ValidationStatsCollector validationStatsCollector = new ValidationStatsCollector();
-        try (Stream<Path> files = Files.list(PathsUtils.PDF_INPUT_DIR)) {
-            List<Path> allPdfFiles = files.filter(App::isPdfFile).toList();
+        try (Stream<Path> files = Files.list(PathsUtils.getPdfInputDir)) {
+            List<Path> allPdfFiles = files.filter(PathsUtils::isPdfFile).toList();
             if (MAX_PARALLEL_THREADS == 0) {
                 for (Path pdfFile : allPdfFiles) {
                     safeTransformFile(pdfFile, validationStatsCollector);
@@ -61,8 +59,7 @@ public class App implements ApplicationRunner {
             }
         }
 
-        receiptStatsCollectors.forEach(ReceiptStatsCollector::printSummary);
-        validationExecutor.saveResult(PathsUtils.VALIDATION_RESULT_JSON);
+        validationExecutor.saveResult(PathsUtils.getValidationResultPath);
     }
 
     private void safeTransformFile(Path pdfFile, ValidationStatsCollector validationStatsCollector) {
@@ -96,12 +93,6 @@ public class App implements ApplicationRunner {
         Files.writeString(ocrResult.cacheDir().resolve(sourcePdfName + ".json"), receiptJson);
 
         validationExecutor.execute(validationStatsCollector, receipt);
-        receiptStatsCollectors.forEach(collector -> collector.collect(receipt));
-
         log.info("Completed");
-    }
-
-    private static boolean isPdfFile(Path file) {
-        return file.toFile().getName().endsWith(".pdf");
     }
 }

@@ -20,7 +20,7 @@ public class Whitelist {
     @SneakyThrows
     public Whitelist() {
         whiltelist = Files
-                .readAllLines(PathsUtils.WHITELIST_CONFIG_PATH)
+                .readAllLines(PathsUtils.getWhitelistFilePath)
                 .stream()
                 .filter(line -> !line.startsWith("#"))
                 .filter(line -> !line.isBlank())
