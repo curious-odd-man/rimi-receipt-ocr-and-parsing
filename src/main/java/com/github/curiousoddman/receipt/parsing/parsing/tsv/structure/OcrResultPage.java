@@ -9,19 +9,19 @@ import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
-public class TsvPage {
+public class OcrResultPage {
     @JsonIgnore
-    private final TsvDocument parentDocument;
-    private final int         pageNum;
+    private final OcrTsvResult parentDocument;
+    private final int          pageNum;
     private final int         x;
     private final int         y;
     private final int         width;
     private final int         height;
 
-    private final List<TsvBlock> blocks;
+    private final List<OcrResultBlock> blocks;
 
     @Override
     public String toString() {
-        return blocks.stream().map(TsvBlock::toString).collect(Collectors.joining(";"));
+        return blocks.stream().map(OcrResultBlock::toString).collect(Collectors.joining(";"));
     }
 }

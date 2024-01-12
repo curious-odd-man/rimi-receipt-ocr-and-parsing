@@ -9,21 +9,21 @@ import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
-public class TsvBlock {
+public class OcrResultParagraph {
     @JsonIgnore
-    private final TsvPage parentPage;
+    private final OcrResultBlock parentBlock;
 
-    private final int blockNum;
+    private final int paragraphNum;
     private final int x;
     private final int y;
     private final int width;
     private final int height;
 
-    private final List<TsvParagraph> paragraphs;
+    private final List<OcrResultLine> lines;
 
 
     @Override
     public String toString() {
-        return paragraphs.stream().map(TsvParagraph::toString).collect(Collectors.joining(";"));
+        return lines.stream().map(OcrResultLine::toString).collect(Collectors.joining(";"));
     }
 }

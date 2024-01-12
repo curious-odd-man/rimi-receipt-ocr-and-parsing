@@ -13,17 +13,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
-public class Tsv2Struct {
+public class TsvParser {
 
     @SneakyThrows
-    public TsvDocument parseTsv(String tsvContents) {
-        TsvDocument document = new TsvDocument(tsvContents, new ArrayList<>());
+    public OcrTsvResult parse(String tsvContents) {
+        OcrTsvResult document = new OcrTsvResult(tsvContents, new ArrayList<>());
 
         List<String> lines = tsvContents.lines().toList();
 
         List<TsvRow> tsvRows = lines
                 .stream()
-                .map(Tsv2Struct::lineToTsvRow)
+                .map(TsvParser::lineToTsvRow)
                 .toList();
 
         Map<Integer, List<TsvRow>> rowsPerPage = tsvRows
@@ -33,19 +33,19 @@ public class Tsv2Struct {
         for (List<TsvRow> pageRows : rowsPerPage.values()) {
             pageRows = new ArrayList<>(pageRows);
             TsvRow pageIdRow = findOnlyOneAndRemove(1, pageRows);
-            TsvPage newPage = new TsvPage(document,
-                                          pageIdRow.pageNum(),
-                                          pageIdRow.left(),
-                                          pageIdRow.top(),
-                                          pageIdRow.width(),
-                                          pageIdRow.height(),
-                                          new ArrayList<>());
+            OcrResultPage newPage = new OcrResultPage(document,
+                                                      pageIdRow.pageNum(),
+                                                      pageIdRow.left(),
+                                                      pageIdRow.top(),
+                                                      pageIdRow.width(),
+                                                      pageIdRow.height(),
+                                                      new ArrayList<>());
             document.getPages().add(newPage);
 
             for (List<TsvRow> blockRows : pageRows.stream().collect(Collectors.groupingBy(TsvRow::blockNum)).values()) {
                 blockRows = new ArrayList<>(blockRows);
                 TsvRow blockIdRow = findOnlyOneAndRemove(2, blockRows);
-                TsvBlock newBlock = new TsvBlock(
+                OcrResultBlock newBlock = new OcrResultBlock(
                         newPage,
                         blockIdRow.blockNum(),
                         blockIdRow.left(),
@@ -59,7 +59,7 @@ public class Tsv2Struct {
                 for (List<TsvRow> paragraphRows : blockRows.stream().collect(Collectors.groupingBy(TsvRow::paragraphNum)).values()) {
                     paragraphRows = new ArrayList<>(paragraphRows);
                     TsvRow paragraphIdRow = findOnlyOneAndRemove(3, paragraphRows);
-                    TsvParagraph newParagraph = new TsvParagraph(
+                    OcrResultParagraph newParagraph = new OcrResultParagraph(
                             newBlock,
                             paragraphIdRow.paragraphNum(),
                             paragraphIdRow.left(),
@@ -73,7 +73,7 @@ public class Tsv2Struct {
                     for (List<TsvRow> lineRows : paragraphRows.stream().collect(Collectors.groupingBy(TsvRow::lineNum)).values()) {
                         lineRows = new ArrayList<>(lineRows);
                         TsvRow lineIdRow = findOnlyOneAndRemove(4, lineRows);
-                        TsvLine newLine = new TsvLine(
+                        OcrResultLine newLine = new OcrResultLine(
                                 newParagraph,
                                 lineIdRow.lineNum(),
                                 lineIdRow.left(),
@@ -85,14 +85,14 @@ public class Tsv2Struct {
 
                         lineRows
                                 .stream()
-                                .map(lineRow -> new TsvWord(newLine,
-                                                            lineRow.wordNum(),
-                                                            lineRow.left(),
-                                                            lineRow.top(),
-                                                            lineRow.width(),
-                                                            lineRow.height(),
-                                                            lineRow.confidence(),
-                                                            lineRow.text())).
+                                .map(lineRow -> new OcrResultWord(newLine,
+                                                                  lineRow.wordNum(),
+                                                                  lineRow.left(),
+                                                                  lineRow.top(),
+                                                                  lineRow.width(),
+                                                                  lineRow.height(),
+                                                                  lineRow.confidence(),
+                                                                  lineRow.text())).
                                 forEach(newLine.getWords()::add);
                         newParagraph.getLines().add(newLine);
                     }

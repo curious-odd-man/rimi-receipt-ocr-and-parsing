@@ -2,7 +2,7 @@ import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.ocr.OcrResult;
 import com.github.curiousoddman.receipt.parsing.ocr.OcrServiceProvider;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi.RimiText2Receipt;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.TsvParser;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
 import lombok.SneakyThrows;
 import nu.pattern.OpenCV;
@@ -19,7 +19,7 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 @SpringBootTest(classes = {
         OcrServiceProvider.class,
         RimiText2Receipt.class,
-        Tsv2Struct.class,
+        TsvParser.class,
         ItemNumbersValidator.class
 })
 public class EndToEndTest {

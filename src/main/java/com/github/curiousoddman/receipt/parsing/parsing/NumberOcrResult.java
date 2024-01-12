@@ -15,7 +15,7 @@ public class NumberOcrResult {
     private final MyBigDecimal number;
     private final Rectangle    location;
     private final List<String> triedValues;
-    private final int          subsequntWordIndexOffset;
+    private final int          subsequentWordIndexOffset;
 
     public static NumberOcrResult of(MyBigDecimal number, Rectangle location) {
         return new NumberOcrResult(
@@ -26,12 +26,12 @@ public class NumberOcrResult {
         );
     }
 
-    public static NumberOcrResult of(MyBigDecimal number, Rectangle location, int subsequntWordIndexOffset) {
+    public static NumberOcrResult of(MyBigDecimal number, Rectangle location, int subsequentWordIndexOffset) {
         return new NumberOcrResult(
                 number,
                 location,
                 null,
-                subsequntWordIndexOffset
+                subsequentWordIndexOffset
         );
     }
 

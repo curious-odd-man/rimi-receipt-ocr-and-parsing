@@ -1,9 +1,9 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvLine;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvWord;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.OcrTsvResult;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.OcrResultLine;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.OcrResultWord;
 import com.github.curiousoddman.receipt.parsing.ocr.OcrService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -17,16 +17,16 @@ import java.util.regex.Pattern;
 @Data
 @RequiredArgsConstructor
 public class RimiContext {
-    private final OriginFile            originFile;
-    private final TsvDocument tsvDocument;
-    private final OcrService  tesseract;
+    private final OriginFile   originFile;
+    private final OcrTsvResult ocrTsvResult;
+    private final OcrService   tesseract;
 
-    private Optional<TsvWord> paymentAmount;
-    private Optional<TsvWord> totalAmount;
-    private Optional<TsvWord> bankCardAmount;
+    private Optional<OcrResultWord> paymentAmount;
+    private Optional<OcrResultWord> totalAmount;
+    private Optional<OcrResultWord> bankCardAmount;
 
-    public TsvLine getLineContaining(String text, int index) {
-        List<TsvLine> linesContaining = getLinesContaining(text);
+    public OcrResultLine getLineContaining(String text, int index) {
+        List<OcrResultLine> linesContaining = getLinesContaining(text);
         if (linesContaining.size() > index) {
             return linesContaining.get(index);
         } else {
@@ -34,12 +34,12 @@ public class RimiContext {
         }
     }
 
-    public List<TsvLine> getNextLinesAfterMatching(Pattern pattern, int count) {
-        List<TsvLine> result = new ArrayList<>();
-        Iterator<TsvLine> iterator = tsvDocument.getLines().iterator();
+    public List<OcrResultLine> getNextLinesAfterMatching(Pattern pattern, int count) {
+        List<OcrResultLine> result = new ArrayList<>();
+        Iterator<OcrResultLine> iterator = ocrTsvResult.getLines().iterator();
         int found = -1;
         while (iterator.hasNext()) {
-            TsvLine line = iterator.next();
+            OcrResultLine line = iterator.next();
             if (line.isBlank()) {
                 continue;
             }
@@ -60,8 +60,8 @@ public class RimiContext {
         return result;
     }
 
-    public Optional<TsvLine> getLineMatching(Pattern pattern, int index) {
-        List<TsvLine> linesContaining = getLinesMatching(pattern);
+    public Optional<OcrResultLine> getLineMatching(Pattern pattern, int index) {
+        List<OcrResultLine> linesContaining = getLinesMatching(pattern);
         if (linesContaining.size() > index) {
             return Optional.of(linesContaining.get(index));
         } else {
@@ -69,28 +69,28 @@ public class RimiContext {
         }
     }
 
-    public List<TsvLine> getLinesContaining(String text) {
-        return tsvDocument
+    public List<OcrResultLine> getLinesContaining(String text) {
+        return ocrTsvResult
                 .getLines()
                 .stream()
                 .filter(line -> line.contains(text))
                 .toList();
     }
 
-    public List<TsvLine> getLinesMatching(Pattern pattern) {
-        return tsvDocument
+    public List<OcrResultLine> getLinesMatching(Pattern pattern) {
+        return ocrTsvResult
                 .getLines()
                 .stream()
                 .filter(line -> pattern.matcher(line.getText()).matches())
                 .toList();
     }
 
-    public List<TsvLine> getLinesBetween(String beginning, String end) {
-        List<TsvLine> result = new ArrayList<>();
-        Iterator<TsvLine> iterator = tsvDocument.getLines().iterator();
+    public List<OcrResultLine> getLinesBetween(String beginning, String end) {
+        List<OcrResultLine> result = new ArrayList<>();
+        Iterator<OcrResultLine> iterator = ocrTsvResult.getLines().iterator();
         boolean addLines = false;
         while (iterator.hasNext()) {
-            TsvLine line = iterator.next();
+            OcrResultLine line = iterator.next();
             if (addLines) {
                 if (line.contains(end)) {
                     return result;

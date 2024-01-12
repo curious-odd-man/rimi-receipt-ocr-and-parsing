@@ -16,10 +16,7 @@ import static java.util.stream.Collectors.groupingBy;
 public class ConversionUtils {
 
     public static MyBigDecimal toMyBigDecimal(String text) {
-        String cleanedInputText = text
-                .replace("\r", "")
-                .replace("\n", "")
-                .replace(',', '.');
+        String cleanedInputText = cleanText(text);
         try {
             return MyBigDecimal.value(cleanedInputText, text);
         } catch (Exception e) {
@@ -28,20 +25,11 @@ public class ConversionUtils {
     }
 
     public static MyBigDecimal toMyBigDecimalOrThrow(String text) {
-        String cleanedInputText = text
-                .replace("\r", "")
-                .replace("\n", "")
-                .replace(',', '.');
+        String cleanedInputText = cleanText(text);
         return MyBigDecimal.value(cleanedInputText, text);
     }
 
-    /**
-     * Converts ONE of texts into BigDecimal value.
-     *
-     * @param texts input text values
-     * @return BigDecimal value
-     */
-    public static MyBigDecimal toMyBigDecimal(Pattern expectedFormat, String... texts) {
+    public static MyBigDecimal toMyBigDecimalMostFrequent(Pattern expectedFormat, String... texts) {
         Map<String, Long> countsPerText = Arrays
                 .stream(texts)
                 .filter(Objects::nonNull)
@@ -71,28 +59,6 @@ public class ConversionUtils {
             noSuchElementException.addSuppressed(suppressed);
         }
         throw noSuchElementException;
-    }
-
-    public static <T> T pickMostFrequent(T... items) {
-        Map<T, Long> countsPerText = Arrays
-                .stream(items)
-                .filter(Objects::nonNull)
-                .collect(groupingBy(t -> t, counting()));
-        TreeMap<Long, List<T>> frequencyToValuesMap = new TreeMap<>(Comparator.reverseOrder());
-        countsPerText.forEach((k, v) -> frequencyToValuesMap
-                .computeIfAbsent(v, ignore -> new ArrayList<>())
-                .add(k));
-        return frequencyToValuesMap.values().iterator().next().get(0);
-    }
-
-    public static Optional<MyBigDecimal> getBigDecimalAfterToken(String line, String token) {
-        String[] splitByProperty = line.split(token);
-        for (String s : splitByProperty) {
-            if (!s.isBlank()) {
-                return Optional.of(toMyBigDecimal(s));
-            }
-        }
-        return Optional.empty();
     }
 
     public static Optional<String> getFirstGroup(String line, Pattern pattern) {
@@ -125,12 +91,16 @@ public class ConversionUtils {
     }
 
     public static boolean isFormatValid(Pattern expectedFormat, String value) {
-        String replaced = value
-                .replace("\r", "")
-                .replace("\n", "")
-                .replace(',', '.');
+        String replaced = cleanText(value);
         return expectedFormat
                 .matcher(replaced)
                 .matches();
+    }
+
+    private static String cleanText(String value) {
+        return value
+                .replace("\r", "")
+                .replace("\n", "")
+                .replace(',', '.');
     }
 }

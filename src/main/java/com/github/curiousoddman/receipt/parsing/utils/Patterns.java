@@ -51,28 +51,11 @@ public class Patterns {
     public static final Pattern SAVINGS_AMOUNT_SEARCH    = Pattern.compile("Tavs\\s+ietaupījums\\s+(.*)");
 
     /*
-    Nodoklis Ar PWN Bez PVN PWN summa
-    Nodoklis Ar PVN Bez PVN PVN summa
-     */
-    //public static final Pattern LINE_BEFORE_VAT_AMOUNTS_LINE = Pattern.compile(".*Nodoklis\\s+Ar\\s+...\\s+Bez\\s+...\\s+...\\s+summa.*");
-
-
-    /*
     LAIKS 2022-05-28 13:16:08
      */
     public static final Pattern RECEIPT_TIME_PATTERN = Pattern.compile("LAIKS\\s+(.*)");
 
-    /**
-     * 1,.23:A
-     * 1.23
-     * 4
-     * 0. 50
-     * -1,20
-     */
-    public static final Pattern NUMBER_PATTERN = Pattern.compile(".*?-*?(-?\\d+)([.,\\s]+(\\d+))?.*");
-
     public static final Pattern NON_DIGITS = Pattern.compile("\\D+");
-
     public static final Pattern SHOP_BRAND_MONEY_SPENT = Pattern.compile("Izmantot.\\s+Mans\\s+Rimi\\s+nauda.*");
     public static final Pattern DEPOZIT_COUNPON_LINE   = Pattern.compile("Depoz.ta\\s+kupons\\s+.*");
 }

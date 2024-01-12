@@ -11,9 +11,9 @@ import java.math.BigDecimal;
 @ToString
 @Getter
 @RequiredArgsConstructor
-public class TsvWord implements Positioned {
+public class OcrResultWord implements Positioned {
     @JsonIgnore
-    private final TsvLine parentLine;
+    private final OcrResultLine parentLine;
 
     private final int        wordNum;
     private final int        x;
@@ -31,10 +31,5 @@ public class TsvWord implements Positioned {
                 width + 4,
                 height + 4
         );
-    }
-
-    @Override
-    public int getIndex() {
-        return wordNum;
     }
 }

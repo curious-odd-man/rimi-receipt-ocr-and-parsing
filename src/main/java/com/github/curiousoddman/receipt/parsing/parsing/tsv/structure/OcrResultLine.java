@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
-public class TsvLine implements Positioned {
+public class OcrResultLine implements Positioned {
     @JsonIgnore
-    private final TsvParagraph parentParagraph;
+    private final OcrResultParagraph parentParagraph;
 
     private final int lineNum;
     private final int x;
@@ -22,18 +22,18 @@ public class TsvLine implements Positioned {
     private final int width;
     private final int height;
 
-    private final List<TsvWord> words;
+    private final List<OcrResultWord> words;
 
     public String getText() {
-        return words.stream().map(TsvWord::getText).collect(Collectors.joining(" "));
+        return words.stream().map(OcrResultWord::getText).collect(Collectors.joining(" "));
     }
 
     public boolean contains(String text) {
         return getText().contains(text);
     }
 
-    public static TsvLine dummy(String text) {
-        return new TsvLine(null, -1, 0, 0, 0, 0, new ArrayList<>()) {
+    public static OcrResultLine dummy(String text) {
+        return new OcrResultLine(null, -1, 0, 0, 0, 0, new ArrayList<>()) {
             @Override
             public String getText() {
                 return text;
@@ -46,14 +46,14 @@ public class TsvLine implements Positioned {
         return getText().isBlank();
     }
 
-    public Optional<TsvWord> getWordByWordNum(int wordNum) {
+    public Optional<OcrResultWord> getWordByWordNum(int wordNum) {
         return words
                 .stream()
                 .filter(w -> w.getWordNum() == wordNum)
                 .findAny();
     }
 
-    public Optional<TsvWord> getWordByIndex(int index) {
+    public Optional<OcrResultWord> getWordByIndex(int index) {
         try {
             if (index > 0) {
                 return Optional.of(words.get(index));
@@ -71,11 +71,6 @@ public class TsvLine implements Positioned {
                              y - 2,
                              width + 4,
                              height + 4);
-    }
-
-    @Override
-    public int getIndex() {
-        return lineNum;
     }
 
     @Override

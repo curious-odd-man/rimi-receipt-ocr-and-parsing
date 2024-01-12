@@ -1,8 +1,8 @@
 package com.github.curiousoddman.receipt.parsing.ocr;
 
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.Tsv2Struct;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.TsvDocument;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.TsvParser;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.OcrTsvResult;
 import com.github.curiousoddman.receipt.parsing.utils.ImageUtils;
 import com.github.curiousoddman.receipt.parsing.utils.PathsUtils;
 import com.sun.jna.Pointer;
@@ -35,13 +35,13 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 @Slf4j
 public class OcrService extends Tesseract {
     private static final boolean    SAVE_DEBUG_IMAGE = false;
-    private final        PathsUtils pathsUtils;
-    private final        Tsv2Struct tsv2Struct;
+    private final PathsUtils pathsUtils;
+    private final TsvParser  tsvParser;
 
     @SneakyThrows
-    public OcrService(PathsUtils pathsUtils, Tsv2Struct tsv2Struct) {
+    public OcrService(PathsUtils pathsUtils, TsvParser tsvParser) {
         this.pathsUtils = pathsUtils;
-        this.tsv2Struct = tsv2Struct;
+        this.tsvParser = tsvParser;
         Files.createDirectories(ocrCachesRoot(pathsUtils));
         setDatapath(pathsUtils.getTesseractModelPath());
         setLanguage("lav");
@@ -61,7 +61,7 @@ public class OcrService extends Tesseract {
             return new OcrResult(
                     originFile,
                     Files.readString(textCacheFilePath),
-                    tsv2Struct.parseTsv(Files.readString(tsvCacheFilePath))
+                    tsvParser.parse(Files.readString(tsvCacheFilePath))
             );
         }
 
@@ -77,8 +77,8 @@ public class OcrService extends Tesseract {
         OcrConfig ocrConfig = OcrConfig.builder(originFile.preprocessedTiff()).build();
         OcrResult tessResult = doMyOCR(ocrConfig, originFile);
         Files.writeString(textCacheFilePath, tessResult.plainText());
-        Files.writeString(tsvCacheFilePath, tessResult.tsvDocument().getTsvFileContents());
-        Files.writeString(tsvDocumentFilePath, OBJECT_WRITER.writeValueAsString(tessResult.tsvDocument()));
+        Files.writeString(tsvCacheFilePath, tessResult.ocrTsvResult().getTsvFileContents());
+        Files.writeString(tsvDocumentFilePath, OBJECT_WRITER.writeValueAsString(tessResult.ocrTsvResult()));
         return tessResult;
     }
 
@@ -110,12 +110,12 @@ public class OcrService extends Tesseract {
                 dispose();
             }
 
-            TsvDocument tsvDocument = tsv2Struct.parseTsv(tsvTextResult.toString());
+            OcrTsvResult ocrTsvResult = tsvParser.parse(tsvTextResult.toString());
 
             return new OcrResult(
                     originFile,
                     plainTextResult.toString(),
-                    tsvDocument
+                    ocrTsvResult
             );
         } catch (Exception e) {
             log.error(e.getMessage(), e);
