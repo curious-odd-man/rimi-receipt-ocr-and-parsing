@@ -1,6 +1,6 @@
 package com.github.curiousoddman.receipt.parsing.ocr;
 
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.TsvParser;
+import com.github.curiousoddman.receipt.parsing.ocr.tsv.TsvParser;
 import com.github.curiousoddman.receipt.parsing.utils.PathsUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

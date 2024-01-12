@@ -2,7 +2,7 @@ import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.ocr.OcrResult;
 import com.github.curiousoddman.receipt.parsing.ocr.OcrServiceProvider;
 import com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi.RimiText2Receipt;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.TsvParser;
+import com.github.curiousoddman.receipt.parsing.ocr.tsv.TsvParser;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
 import lombok.SneakyThrows;
 import nu.pattern.OpenCV;

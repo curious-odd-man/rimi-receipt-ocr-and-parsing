@@ -1,10 +1,10 @@
 package com.github.curiousoddman.receipt.parsing.parsing.receipt.rimi;
 
 import com.github.curiousoddman.receipt.parsing.parsing.NumberOcrResult;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.TsvParser;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.document.OcrTsvResult;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.document.OcrResultLine;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.document.OcrResultWord;
+import com.github.curiousoddman.receipt.parsing.ocr.tsv.TsvParser;
+import com.github.curiousoddman.receipt.parsing.ocr.tsv.document.OcrTsvResult;
+import com.github.curiousoddman.receipt.parsing.ocr.tsv.document.OcrResultLine;
+import com.github.curiousoddman.receipt.parsing.ocr.tsv.document.OcrResultWord;
 import com.github.curiousoddman.receipt.parsing.ocr.OcrConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

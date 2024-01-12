@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.parsing.parsing.tsv.document;
+package com.github.curiousoddman.receipt.parsing.ocr.tsv.document;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;

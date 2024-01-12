@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.parsing.parsing.tsv.raw;
+package com.github.curiousoddman.receipt.parsing.ocr.tsv.raw;
 
 
 import java.math.BigDecimal;
