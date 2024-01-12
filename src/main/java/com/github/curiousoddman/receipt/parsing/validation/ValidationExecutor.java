@@ -27,14 +27,14 @@ public class ValidationExecutor {
                 validationResult.add(receiptValidator.validate(receipt));
             }
             if (validationResult.stream().allMatch(ValidationResult::isSuccess)) {
-                validationStatsCollector.recordSuccess(receipt);
+                validationStatsCollector.recordSuccess();
                 resultMap.put(receipt.getFileName(), "SUCCESS");
             } else {
                 validationStatsCollector.recordFailure(receipt, validationResult);
                 resultMap.put(receipt.getFileName(), new Error("FAIL", getErrorsList(validationResult)));
             }
         } catch (Exception e) {
-            validationStatsCollector.recordFailure(receipt, List.of(new ValidationResult(e)));
+            validationStatsCollector.recordFailure(receipt, List.of(ValidationResult.failure(ValidationExecutor.class, e)));
             resultMap.put(receipt.getFileName(), new Error("FAIL", getErrorsList(validationResult)));
         }
     }
@@ -44,7 +44,6 @@ public class ValidationExecutor {
                 .stream()
                 .map(ValidationResult::getErrors)
                 .flatMap(List::stream)
-                .map(Object::toString)
                 .filter(Strings::isNotBlank)
                 .toList();
     }

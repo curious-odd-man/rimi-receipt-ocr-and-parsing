@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,6 +20,10 @@ public class Whitelist {
 
     @SneakyThrows
     public Whitelist(PathsUtils pathsUtils) {
+        if (!Files.exists(pathsUtils.getWhitelistFilePath())) {
+            whiltelist = Set.of();
+            return;
+        }
         whiltelist = Files
                 .readAllLines(pathsUtils.getWhitelistFilePath())
                 .stream()

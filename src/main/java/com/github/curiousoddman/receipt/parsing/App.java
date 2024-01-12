@@ -67,7 +67,7 @@ public class App implements ApplicationRunner {
         try {
             transformFile(pdfFile, validationStatsCollector);
         } catch (Exception e) {
-            log.error("Unexepcted error", e);
+            log.error("Unexpected error", e);
         }
     }
 
@@ -89,8 +89,8 @@ public class App implements ApplicationRunner {
 
         OcrResult ocrResult = ocrServiceProvider.get().getCachedOrDoOcr(pdfFile);
         Receipt receipt = rimiText2Receipt.parse(sourcePdfName, ocrResult, ocrServiceProvider.get());
-        String receiptJson = OBJECT_WRITER.writeValueAsString(receipt);
 
+        String receiptJson = OBJECT_WRITER.writeValueAsString(receipt);
         Files.writeString(ocrResult.cacheDir().resolve(sourcePdfName + ".json"), receiptJson);
 
         validationExecutor.execute(validationStatsCollector, receipt);

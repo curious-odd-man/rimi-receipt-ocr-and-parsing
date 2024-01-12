@@ -17,6 +17,10 @@ public class IgnoreList {
 
     @SneakyThrows
     public IgnoreList(PathsUtils pathsUtils) {
+        if (!Files.exists(pathsUtils.getIgnoreFilePath())) {
+            ignoredFiles = Set.of();
+            return;
+        }
         ignoredFiles = Files
                 .readAllLines(pathsUtils.getIgnoreFilePath())
                 .stream()

@@ -7,7 +7,6 @@ import com.github.curiousoddman.receipt.parsing.utils.Constants;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Component
 public class TotalDiscountAmountValidator implements ReceiptValidator {
@@ -15,18 +14,14 @@ public class TotalDiscountAmountValidator implements ReceiptValidator {
     public ValidationResult validate(Receipt receipt) {
         MyBigDecimal receiptTotalSavings = receipt.getTotalSavings();
         if (receiptTotalSavings.isError()) {
-            return new ValidationResult(getClass(), List.of(
-                    String.format(receiptTotalSavings.errorText())
-            ));
+            return ValidationResult.failure(getClass(), String.format(receiptTotalSavings.errorText()));
         }
         BigDecimal totalSavings = receiptTotalSavings.value();
         BigDecimal itemsTotalDiscounts = BigDecimal.ZERO;
         for (ReceiptItem item : receipt.getItems()) {
             MyBigDecimal discount = item.getDiscount();
             if (discount.isError()) {
-                return new ValidationResult(getClass(), List.of(
-                        String.format(discount.errorText())
-                ));
+                return ValidationResult.failure(getClass(), String.format(discount.errorText()));
             }
             if (!item.isRemoved()) {
                 itemsTotalDiscounts = itemsTotalDiscounts.add(discount.value());
@@ -37,9 +32,7 @@ public class TotalDiscountAmountValidator implements ReceiptValidator {
                 .getDiscounts()
                 .getOrDefault(Constants.USED_SHOP_BRAND_MONEY, MyBigDecimal.zero());
         if (usedShopBrandMoney.isError()) {
-            return new ValidationResult(getClass(), List.of(
-                    usedShopBrandMoney.errorText()
-            ));
+            return ValidationResult.failure(getClass(), usedShopBrandMoney.errorText());
         }
 
         BigDecimal totalDiscountComputed = usedShopBrandMoney.value()
@@ -47,11 +40,12 @@ public class TotalDiscountAmountValidator implements ReceiptValidator {
                                                              .add(itemsTotalDiscounts.abs());
 
         if (totalSavings.compareTo(totalDiscountComputed) == 0) {
-            return new ValidationResult(getClass());
+            return ValidationResult.success(getClass());
         }
 
-        return new ValidationResult(getClass(), List.of(
+        return ValidationResult.failure(
+                getClass(),
                 String.format("Total savings %s not equal to sum of item discounts %s", totalSavings, itemsTotalDiscounts)
-        ));
+        );
     }
 }

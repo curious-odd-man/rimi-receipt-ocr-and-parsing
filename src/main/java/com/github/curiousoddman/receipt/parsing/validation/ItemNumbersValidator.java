@@ -14,7 +14,7 @@ import java.util.List;
 public class ItemNumbersValidator implements ReceiptValidator {
     @Override
     public ValidationResult validate(Receipt receipt) {
-        List<Object> errors = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
         for (ReceiptItem item : receipt.getItems()) {
             if (!isItemValid(item)) {
                 errors.add(
@@ -22,10 +22,10 @@ public class ItemNumbersValidator implements ReceiptValidator {
                 );
             }
         }
-        return new ValidationResult(getClass(), errors);
+        return ValidationResult.failure(getClass(), errors);
     }
 
-    public boolean isItemValid(ReceiptItem item) {
+    public static boolean isItemValid(ReceiptItem item) {
         MyBigDecimal pricePerUnit = item.getPricePerUnit();
         MyBigDecimal count = item.getCount();
         MyBigDecimal discount = item.getDiscount();

@@ -11,20 +11,20 @@ public class ValidationStatsCollector {
     private final AtomicInteger successes = new AtomicInteger();
     private final AtomicInteger failures  = new AtomicInteger();
 
-    public void recordSuccess(Receipt receipt) {
+    public void recordSuccess() {
         successes.addAndGet(1);
         reportStats();
     }
 
-    public void recordFailure(Receipt receipt, List<ValidationResult> validationResult) {
+    public void recordFailure(Receipt receipt, List<ValidationResult> validationResults) {
         failures.addAndGet(1);
         reportStats();
         log.error("Reporting errors for receipt {}", receipt.getFileName());
-        validationResult
+        validationResults
                 .stream()
                 .filter(vr -> !vr.isSuccess())
                 .forEach(vr -> {
-                    for (Object error : vr.getErrors()) {
+                    for (String error : vr.getErrors()) {
                         log.error("\t{} : {}", vr.getValidatorClass().getSimpleName(), error);
                     }
                 });

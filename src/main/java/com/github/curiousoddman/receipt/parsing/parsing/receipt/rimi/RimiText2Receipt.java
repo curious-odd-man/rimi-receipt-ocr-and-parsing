@@ -341,7 +341,7 @@ public class RimiText2Receipt {
                         }
                     }
                     if (shouldIncludeItem) {
-                        if (itemNumbersValidator.isItemValid(itemResult.getReceiptItem())) {
+                        if (ItemNumbersValidator.isItemValid(itemResult.getReceiptItem())) {
                             items.add(itemResult.getReceiptItem());
                         } else {
                             ReceiptItem item = tryOcrNumbersAgain(context, itemResult);
@@ -468,7 +468,7 @@ public class RimiText2Receipt {
             }
             ReceiptItem itemCopy = receiptItemResult.getReceiptItem().toBuilder().build();
             setter.accept(itemCopy, toMyBigDecimal(newValue));
-            if (itemNumbersValidator.isItemValid(itemCopy)) {
+            if (ItemNumbersValidator.isItemValid(itemCopy)) {
                 return itemCopy;
             }
         }

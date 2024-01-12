@@ -7,7 +7,6 @@ import com.github.curiousoddman.receipt.parsing.utils.Constants;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Component
 public class TotalAmountValidator implements ReceiptValidator {
@@ -15,18 +14,14 @@ public class TotalAmountValidator implements ReceiptValidator {
     public ValidationResult validate(Receipt receipt) {
         MyBigDecimal receiptTotalPayment = receipt.getTotalAmount();
         if (receiptTotalPayment.isError()) {
-            return new ValidationResult(getClass(), List.of(
-                    receiptTotalPayment.errorText()
-            ));
+            return ValidationResult.failure(getClass(), receiptTotalPayment.errorText());
         }
 
         MyBigDecimal usedShopBrandMoney = receipt
                 .getDiscounts()
                 .getOrDefault(Constants.USED_SHOP_BRAND_MONEY, MyBigDecimal.zero());
         if (usedShopBrandMoney.isError()) {
-            return new ValidationResult(getClass(), List.of(
-                    usedShopBrandMoney.errorText()
-            ));
+            return ValidationResult.failure(getClass(), usedShopBrandMoney.errorText());
         }
 
         BigDecimal totalPayment = receiptTotalPayment.value()
@@ -35,9 +30,7 @@ public class TotalAmountValidator implements ReceiptValidator {
         for (ReceiptItem item : receipt.getItems()) {
             MyBigDecimal finalCost = item.getFinalCost();
             if (finalCost.isError()) {
-                return new ValidationResult(getClass(), List.of(
-                        finalCost.errorText()
-                ));
+                return ValidationResult.failure(getClass(), finalCost.errorText());
             }
             if (!item.isRemoved()) {
                 itemPriceSum = itemPriceSum.add(finalCost.value());
@@ -45,12 +38,13 @@ public class TotalAmountValidator implements ReceiptValidator {
         }
 
         if (totalPayment.compareTo(itemPriceSum) == 0) {
-            return new ValidationResult(getClass());
+            return ValidationResult.success(getClass());
         }
 
-        return new ValidationResult(getClass(), List.of(
+        return ValidationResult.failure(
+                getClass(),
                 String.format("Total amount %s minus shop brand money %s not equal to sum of item prices %s",
                               totalPayment, usedShopBrandMoney.value(), itemPriceSum)
-        ));
+        );
     }
 }

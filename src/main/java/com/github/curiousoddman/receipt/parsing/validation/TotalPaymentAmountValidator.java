@@ -14,9 +14,7 @@ public class TotalPaymentAmountValidator implements ReceiptValidator {
     public ValidationResult validate(Receipt receipt) {
         MyBigDecimal receiptTotalPayment = receipt.getTotalAmount();
         if (receiptTotalPayment.isError()) {
-            return new ValidationResult(getClass(), List.of(
-                    receiptTotalPayment.errorText()
-            ));
+            return ValidationResult.failure(getClass(), receiptTotalPayment.errorText());
         }
 
         BigDecimal paymentMethodSum = BigDecimal.ZERO;
@@ -25,9 +23,7 @@ public class TotalPaymentAmountValidator implements ReceiptValidator {
             List<MyBigDecimal> amounts = paymentMethod.getValue();
             for (MyBigDecimal amount : amounts) {
                 if (amount.isError()) {
-                    return new ValidationResult(getClass(), List.of(
-                            amount.errorText()
-                    ));
+                    return ValidationResult.failure(getClass(), amount.errorText());
                 }
                 paymentMethodSum = paymentMethodSum.add(amount.value());
             }
@@ -35,12 +31,12 @@ public class TotalPaymentAmountValidator implements ReceiptValidator {
 
         BigDecimal receiptTotalAmount = receiptTotalPayment.value();
         if (receiptTotalAmount.compareTo(paymentMethodSum) == 0) {
-            return new ValidationResult(getClass());
+            return ValidationResult.success(getClass());
         }
 
-        return new ValidationResult(getClass(), List.of(
-                String.format("Total amount %s not equal to sum of payments %s",
-                              receiptTotalAmount, paymentMethodSum)
-        ));
+        return ValidationResult.failure(
+                getClass(),
+                String.format("Total amount %s not equal to sum of payments %s", receiptTotalAmount, paymentMethodSum)
+        );
     }
 }
