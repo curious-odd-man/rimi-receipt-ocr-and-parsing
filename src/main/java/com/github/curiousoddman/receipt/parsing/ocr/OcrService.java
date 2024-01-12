@@ -82,7 +82,7 @@ public class OcrService extends Tesseract {
         return tessResult;
     }
 
-    private OcrResult doMyOCR(OcrConfig ocrConfig, OriginFile originFile) throws TesseractException {
+    public OcrResult doMyOCR(OcrConfig ocrConfig, OriginFile originFile) throws TesseractException {
         try {
             ocrConfig.apply(this);
             File tiffFile = ocrConfig.getTiffFile().toFile();

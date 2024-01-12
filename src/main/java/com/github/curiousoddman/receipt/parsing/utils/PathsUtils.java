@@ -24,11 +24,11 @@ public class PathsUtils {
     }
 
     public Path getIgnoreFilePath() {
-        return Path.of("ignore.txt");
+        return Path.of(pathsConfig.getIgnoreFile());
     }
 
     public Path getWhitelistFilePath() {
-        return Path.of("whitelist.txt");
+        return Path.of(pathsConfig.getWhitelistFile());
     }
 
     public String getTesseractModelPath() {
