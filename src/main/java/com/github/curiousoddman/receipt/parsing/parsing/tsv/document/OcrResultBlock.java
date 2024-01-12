@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.parsing.parsing.tsv.structure;
+package com.github.curiousoddman.receipt.parsing.parsing.tsv.document;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -9,21 +9,21 @@ import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
-public class OcrResultParagraph {
+public class OcrResultBlock {
     @JsonIgnore
-    private final OcrResultBlock parentBlock;
+    private final OcrResultPage parentPage;
 
-    private final int paragraphNum;
+    private final int blockNum;
     private final int x;
     private final int y;
     private final int width;
     private final int height;
 
-    private final List<OcrResultLine> lines;
+    private final List<OcrResultParagraph> paragraphs;
 
 
     @Override
     public String toString() {
-        return lines.stream().map(OcrResultLine::toString).collect(Collectors.joining(";"));
+        return paragraphs.stream().map(OcrResultParagraph::toString).collect(Collectors.joining(";"));
     }
 }

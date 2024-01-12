@@ -2,7 +2,7 @@ package com.github.curiousoddman.receipt.parsing.ocr;
 
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.TsvParser;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.OcrTsvResult;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.document.OcrTsvResult;
 import com.github.curiousoddman.receipt.parsing.utils.ImageUtils;
 import com.github.curiousoddman.receipt.parsing.utils.PathsUtils;
 import com.sun.jna.Pointer;

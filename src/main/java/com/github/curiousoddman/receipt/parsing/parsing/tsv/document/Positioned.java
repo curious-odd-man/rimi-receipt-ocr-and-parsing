@@ -1,4 +1,4 @@
-package com.github.curiousoddman.receipt.parsing.parsing.tsv.structure;
+package com.github.curiousoddman.receipt.parsing.parsing.tsv.document;
 
 public interface Positioned {
     int getX();

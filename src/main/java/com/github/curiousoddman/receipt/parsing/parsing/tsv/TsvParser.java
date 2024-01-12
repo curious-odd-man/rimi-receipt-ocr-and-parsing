@@ -1,7 +1,7 @@
 package com.github.curiousoddman.receipt.parsing.parsing.tsv;
 
 import com.github.curiousoddman.receipt.parsing.parsing.tsv.raw.TsvRow;
-import com.github.curiousoddman.receipt.parsing.parsing.tsv.structure.*;
+import com.github.curiousoddman.receipt.parsing.parsing.tsv.document.*;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 
