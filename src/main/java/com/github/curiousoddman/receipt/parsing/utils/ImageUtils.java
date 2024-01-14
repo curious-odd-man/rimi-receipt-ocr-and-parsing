@@ -18,13 +18,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.opencv.highgui.HighGui.toBufferedImage;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_GRAYSCALE;
 import static org.opencv.imgproc.Imgproc.THRESH_BINARY;
 
 @Slf4j
 public class ImageUtils {
 
-    public static final int BLANK_PIXELS_BETWEEN_ROWS = 30;
 
     public static Mat loadImage(String imagePath, int config) {
         return Imgcodecs.imread(imagePath, config);
@@ -36,6 +36,11 @@ public class ImageUtils {
 
     @SneakyThrows
     public static void doImagePreprocessing(Path sourceImage, Path targetImage) {
+        doImagePreprocessing(sourceImage, targetImage, 0);
+    }
+
+    @SneakyThrows
+    public static void doImagePreprocessing(Path sourceImage, Path targetImage, int blankPixelsBetweenRows) {
         Mat sourceMat = loadImage(sourceImage.toAbsolutePath().toString(), IMREAD_GRAYSCALE);
         //saveImage(sourceMat, imagePath + ".grayscale.tiff");
         Mat dstMat = new Mat(sourceMat.rows(), sourceMat.cols(), sourceMat.type());
@@ -45,29 +50,31 @@ public class ImageUtils {
                           255,
                           THRESH_BINARY);       // THRESH_BINARY
 
-        saveImage(dstMat, targetImage.toAbsolutePath().toString());
-        //BufferedImage bufferedImage = ImageIO.read(targetImage.toFile());
-//        BufferedImage bufferedImage = (BufferedImage) toBufferedImage(dstMat);
-//        BufferedImage transformedImage = addSpaceBetweenLines(bufferedImage, targetImage);
-//        ImageIO.write(transformedImage, "tiff", targetImage.toFile());
+        if (blankPixelsBetweenRows == 0) {
+            saveImage(dstMat, targetImage.toAbsolutePath().toString());
+        } else {
+            BufferedImage bufferedImage = (BufferedImage) toBufferedImage(dstMat);
+            BufferedImage transformedImage = addSpaceBetweenLines(bufferedImage, targetImage, blankPixelsBetweenRows);
+            ImageIO.write(transformedImage, "tiff", targetImage.toFile());
+        }
     }
 
     @SneakyThrows
-    public static BufferedImage addSpaceBetweenLines(BufferedImage image, Path targetImage) {
+    public static BufferedImage addSpaceBetweenLines(BufferedImage image, Path targetImage, int blankPixelsBetweenRows) {
         int height = image.getHeight();
         int width = image.getWidth();
         List<Line> lines = getLines(image, targetImage, height, width);
         if (lines.size() == 1) {
             return image;
         }
-        int additionalHeight = lines.size() * BLANK_PIXELS_BETWEEN_ROWS;
+        int additionalHeight = lines.size() * blankPixelsBetweenRows;
         BufferedImage newImage = new BufferedImage(width, height + additionalHeight, image.getType());
         Graphics2D g2d = newImage.createGraphics();
         g2d.setBackground(Color.WHITE);
         g2d.clearRect(0, 0, width, height + additionalHeight);
         for (int i = 0; i < lines.size(); i++) {
             Line line = lines.get(i);
-            drawImage(image, line, width, g2d, i, newImage);
+            drawImage(image, line, width, g2d, i, blankPixelsBetweenRows);
         }
         g2d.dispose();
         return newImage;
@@ -78,7 +85,7 @@ public class ImageUtils {
         int height = image.getHeight();
         int width = image.getWidth();
         List<Line> lines = getLines(image, null, height, width);
-        if(lines.size() == 1) {
+        if (lines.size() == 1) {
             return image;
         }
         Line lineWithMostBlackPixels = lines.get(0);
@@ -133,9 +140,9 @@ public class ImageUtils {
         return lines;
     }
 
-    private static void drawImage(BufferedImage image, Line line, int width, Graphics2D g2d, int i, BufferedImage newImage) throws IOException {
+    private static void drawImage(BufferedImage image, Line line, int width, Graphics2D g2d, int i, int blankPixelsBetweenRows) {
         BufferedImage subimage = image.getSubimage(0, line.yFrom(), width, line.height());
-        g2d.drawImage(subimage, 0, line.yFrom() + i * BLANK_PIXELS_BETWEEN_ROWS, width, line.height(), null);
+        g2d.drawImage(subimage, 0, line.yFrom() + i * blankPixelsBetweenRows, width, line.height(), null);
     }
 
     private record Line(int yFrom, int yTo) {

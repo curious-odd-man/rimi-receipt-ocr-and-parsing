@@ -4,14 +4,14 @@ import com.github.curiousoddman.receipt.parsing.model.MyBigDecimal;
 import com.github.curiousoddman.receipt.parsing.model.MyLocalDateTime;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.model.ReceiptItem;
-import com.github.curiousoddman.receipt.parsing.parsing.NumberOcrResult;
-import com.github.curiousoddman.receipt.parsing.parsing.receipt.ReceiptItemResult;
+import com.github.curiousoddman.receipt.parsing.ocr.OcrConfig;
+import com.github.curiousoddman.receipt.parsing.ocr.OcrResult;
+import com.github.curiousoddman.receipt.parsing.ocr.OcrService;
 import com.github.curiousoddman.receipt.parsing.ocr.tsv.TsvParser;
 import com.github.curiousoddman.receipt.parsing.ocr.tsv.document.OcrResultLine;
 import com.github.curiousoddman.receipt.parsing.ocr.tsv.document.OcrResultWord;
-import com.github.curiousoddman.receipt.parsing.ocr.OcrResult;
-import com.github.curiousoddman.receipt.parsing.ocr.OcrService;
-import com.github.curiousoddman.receipt.parsing.ocr.OcrConfig;
+import com.github.curiousoddman.receipt.parsing.parsing.NumberOcrResult;
+import com.github.curiousoddman.receipt.parsing.parsing.receipt.ReceiptItemResult;
 import com.github.curiousoddman.receipt.parsing.utils.*;
 import com.github.curiousoddman.receipt.parsing.validation.ItemNumbersValidator;
 import lombok.Data;
@@ -46,8 +46,7 @@ public class RimiText2Receipt {
     public static final int X_IMG_PX_MAX          = 1300;
     public static final int X_IMG_PX_MIN          = 1260;
 
-    private final TsvParser            tsvParser;
-    private final ItemNumbersValidator itemNumbersValidator;
+    private final TsvParser tsvParser;
 
     public Receipt parse(String fileName,
                          OcrResult ocrResult,
@@ -57,10 +56,10 @@ public class RimiText2Receipt {
                 ocrResult.ocrTsvResult(),
                 ocrService
         );
-        Receipt receipt = Receipt
+        return Receipt
                 .builder()
                 .fileName(fileName)
-                .shopBrand(getShopBrand(context))
+                .shopBrand("Rimi")
                 .shopName(getShopName(context))
                 .cashRegisterNumber(getCashRegisterNumber(context))
                 .totalSavings(getTotalSavings(context))
@@ -74,8 +73,6 @@ public class RimiText2Receipt {
                 .items(getItems(context))
                 .paymentMethods(getPaymentMethods(context))
                 .build();
-        validateAndFix(receipt, context);
-        return receipt;
     }
 
     protected Map<String, List<MyBigDecimal>> getPaymentMethods(RimiContext context) {
@@ -140,18 +137,6 @@ public class RimiText2Receipt {
         return result;
     }
 
-    protected void validateAndFix(Receipt receipt, RimiContext context) {
-        // TODO: see if this is helpful in the end
-//        if (!totalAmountValidator.validate(receipt).isSuccess()) {
-//            var bankCardAmount = context.getBankCardAmount().map(v -> reOcrWordInReceipt(v, MONEY_AMOUNT, context)).map(NumberOcrResult::getNumber);
-//            var paymentAmount = context.getPaymentAmount().map(v -> reOcrWordInReceipt(v, MONEY_AMOUNT, context)).map(NumberOcrResult::getNumber);
-//            var totalAmount = context.getTotalAmount().map(v -> reOcrWordInReceipt(v, MONEY_AMOUNT, context)).map(NumberOcrResult::getNumber);
-//
-//            MyBigDecimal value = ConversionUtils.pickMostFrequent(bankCardAmount.orElse(null), paymentAmount.orElse(null), totalAmount.orElse(null));
-//            receipt.setTotalPayment(value);
-//        }
-    }
-
     protected Map<String, MyBigDecimal> getDiscounts(RimiContext context) {
         Map<String, MyBigDecimal> discounts = new LinkedHashMap<>();
         List<OcrResultLine> linesBetween = context.getLinesBetween("ATLAIDES", "Tavs ietaupījums");
@@ -179,10 +164,6 @@ public class RimiText2Receipt {
             log.error("Wrongly parsed discount lines");
         }
         return discounts;
-    }
-
-    protected String getShopBrand(RimiContext context) {
-        return "Rimi";
     }
 
     protected String getShopName(RimiContext context) {
@@ -524,20 +505,6 @@ public class RimiText2Receipt {
                                                              wordIndexInLine
                 ))
                 .orElse(NumberOcrResult.ofError("Optional word is empty"));
-    }
-
-    private NumberOcrResult getNumberFromReceipt(OcrResultWord originalWord,
-                                                 Pattern expectedFormat,
-                                                 RimiContext context,
-                                                 int wordIndexInLine) {
-
-        ReceiptNumberExtractionChain receiptNumberExtractionChain = new ReceiptNumberExtractionChain(
-                expectedFormat,
-                context,
-                tsvParser
-        );
-
-        return receiptNumberExtractionChain.parse(originalWord, wordIndexInLine);
     }
 
     private NumberOcrResult getNumberFromReceiptAndReportError(OcrResultWord originalWord,

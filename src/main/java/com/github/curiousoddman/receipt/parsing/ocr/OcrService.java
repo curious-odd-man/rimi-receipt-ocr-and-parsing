@@ -1,5 +1,6 @@
 package com.github.curiousoddman.receipt.parsing.ocr;
 
+import com.github.curiousoddman.receipt.parsing.config.DebugConfig;
 import com.github.curiousoddman.receipt.parsing.model.OriginFile;
 import com.github.curiousoddman.receipt.parsing.ocr.tsv.TsvParser;
 import com.github.curiousoddman.receipt.parsing.ocr.tsv.document.OcrTsvResult;
@@ -34,14 +35,15 @@ import static com.github.curiousoddman.receipt.parsing.utils.JsonUtils.OBJECT_WR
 
 @Slf4j
 public class OcrService extends Tesseract {
-    private static final boolean    SAVE_DEBUG_IMAGE = false;
-    private final PathsUtils pathsUtils;
-    private final TsvParser  tsvParser;
+    private final PathsUtils  pathsUtils;
+    private final TsvParser   tsvParser;
+    private final DebugConfig debugConfig;
 
     @SneakyThrows
-    public OcrService(PathsUtils pathsUtils, TsvParser tsvParser) {
+    public OcrService(PathsUtils pathsUtils, TsvParser tsvParser, DebugConfig debugConfig) {
         this.pathsUtils = pathsUtils;
         this.tsvParser = tsvParser;
+        this.debugConfig = debugConfig;
         Files.createDirectories(ocrCachesRoot(pathsUtils));
         setDatapath(pathsUtils.getTesseractModelPath());
         setLanguage("lav");
@@ -145,7 +147,7 @@ public class OcrService extends Tesseract {
         File tiffFile = ocrConfig.getTiffFile().toFile();
         String tiffFilePath = ocrConfig.getTiffFile().toAbsolutePath().toString();
 
-        if (SAVE_DEBUG_IMAGE) {
+        if (debugConfig.isSaveReOcrAreaImages()) {
             Rectangle rect = ocrConfig.getOcrArea();
             if (rect != null) {
                 int x = rect.x;
