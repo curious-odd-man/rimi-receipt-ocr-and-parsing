@@ -1,3 +1,4 @@
+import com.github.curiousoddman.receipt.parsing.config.DebugConfig;
 import com.github.curiousoddman.receipt.parsing.config.PathsConfig;
 import com.github.curiousoddman.receipt.parsing.model.Receipt;
 import com.github.curiousoddman.receipt.parsing.ocr.OcrResult;
@@ -27,7 +28,8 @@ import static org.mockito.Mockito.when;
         RimiText2Receipt.class,
         TsvParser.class,
         ItemNumbersValidator.class,
-        PathsUtils.class
+        PathsUtils.class,
+        DebugConfig.class
 })
 @Slf4j
 public class EndToEndTest {

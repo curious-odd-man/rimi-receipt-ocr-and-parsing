@@ -450,6 +450,7 @@ public class RimiText2Receipt {
             ReceiptItem itemCopy = receiptItemResult.getReceiptItem().toBuilder().build();
             setter.accept(itemCopy, toMyBigDecimal(newValue));
             if (ItemNumbersValidator.isItemValid(itemCopy)) {
+                log.info("Fixed item from \n\told:{}\n\tfix:{}", receiptItemResult.getReceiptItem(), itemCopy);
                 return itemCopy;
             }
         }
